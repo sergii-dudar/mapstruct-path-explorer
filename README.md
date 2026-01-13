@@ -31,21 +31,21 @@ Very early draft state.
 ## Building
 
 ```bash
-cd mapstruct-path-tool
+cd mapstruct-path-explorer
 mvn clean package
 ```
 
 This will create two JAR files in the `target/` directory:
 
-- `mapstruct-path-tool-1.0.0.jar` - Regular JAR
-- `mapstruct-path-tool-1.0.0-jar-with-dependencies.jar` - Executable JAR with all dependencies
+- `mapstruct-path-explorer-*.jar` - Regular JAR
+- `mapstruct-path-explorer.jar` - Executable (FAT) JAR with all dependencies
 
 ## Usage
 
 ### Basic Syntax
 
 ```bash
-java -jar target/mapstruct-path-tool-1.0.0-jar-with-dependencies.jar \
+java -jar target/mapstruct-path-explorer.jar \
   "<fully.qualified.ClassName>" \
   "<path.expression>"
 ```
@@ -55,7 +55,7 @@ java -jar target/mapstruct-path-tool-1.0.0-jar-with-dependencies.jar \
 If you need to analyze classes from your own project:
 
 ```bash
-java -cp "target/mapstruct-path-tool-1.0.0-jar-with-dependencies.jar:/path/to/your/classes" \
+java -cp "target/mapstruct-path-explorer.jar:/path/to/your/classes" \
   com.dsm.mapstruct.MapStructPathTool \
   "com.example.User" \
   "address.street"
@@ -66,7 +66,7 @@ java -cp "target/mapstruct-path-tool-1.0.0-jar-with-dependencies.jar:/path/to/yo
 ### 1. Show All Fields in a Class
 
 ```bash
-java -jar mapstruct-path-tool.jar "com.example.User" ""
+java -jar mapstruct-path-explorer.jar "com.example.User" ""
 ```
 
 **Output:**
@@ -96,7 +96,7 @@ java -jar mapstruct-path-tool.jar "com.example.User" ""
 ### 2. Navigate to Nested Field
 
 ```bash
-java -jar mapstruct-path-tool.jar "com.example.User" "address."
+java -jar mapstruct-path-explorer.jar "com.example.User" "address."
 ```
 
 **Output:**
@@ -118,7 +118,7 @@ java -jar mapstruct-path-tool.jar "com.example.User" "address."
 ### 3. Filter by Prefix
 
 ```bash
-java -jar mapstruct-path-tool.jar "com.example.User" "address.st"
+java -jar mapstruct-path-explorer.jar "com.example.User" "address.st"
 ```
 
 **Output:**
@@ -139,7 +139,7 @@ java -jar mapstruct-path-tool.jar "com.example.User" "address.st"
 MapStruct uses property-style syntax for collections:
 
 ```bash
-java -jar mapstruct-path-tool.jar "com.example.Order" "items.first."
+java -jar mapstruct-path-explorer.jar "com.example.Order" "items.first."
 ```
 
 **Output:**
@@ -159,7 +159,7 @@ java -jar mapstruct-path-tool.jar "com.example.Order" "items.first."
 ### 5. Deep Nested Navigation
 
 ```bash
-java -jar mapstruct-path-tool.jar "com.example.Order" "items.first.product.name"
+java -jar mapstruct-path-explorer.jar "com.example.Order" "items.first.product.name"
 ```
 
 **Output:**
@@ -175,7 +175,7 @@ java -jar mapstruct-path-tool.jar "com.example.Order" "items.first.product.name"
 ### 6. Navigate Through Arrays
 
 ```bash
-java -jar mapstruct-path-tool.jar "com.example.Company" "employees.first.address."
+java -jar mapstruct-path-explorer.jar "com.example.Company" "employees.first.address."
 ```
 
 ### 7. Navigate Through Java Records
@@ -183,7 +183,7 @@ java -jar mapstruct-path-tool.jar "com.example.Company" "employees.first.address
 Java records are fully supported. Record component accessor methods (like `name()`, `age()`) are treated as getters:
 
 ```bash
-java -jar mapstruct-path-tool.jar "com.example.PersonRecord" ""
+java -jar mapstruct-path-explorer.jar "com.example.PersonRecord" ""
 ```
 
 **Output:**
@@ -203,7 +203,7 @@ java -jar mapstruct-path-tool.jar "com.example.PersonRecord" ""
 **Nested Records:**
 
 ```bash
-java -jar mapstruct-path-tool.jar "com.example.AddressRecord" "country."
+java -jar mapstruct-path-explorer.jar "com.example.AddressRecord" "country."
 ```
 
 **Output:**
@@ -224,7 +224,7 @@ java -jar mapstruct-path-tool.jar "com.example.AddressRecord" "country."
 When navigating to primitive types, wrapper types, or String, the tool returns empty completions since these types don't have meaningful MapStruct properties:
 
 ```bash
-java -jar mapstruct-path-tool.jar "com.example.Person" "firstName."
+java -jar mapstruct-path-explorer.jar "com.example.Person" "firstName."
 ```
 
 **Output:**
@@ -346,7 +346,7 @@ This tool can be integrated with IDE plugins to provide MapStruct path completio
 **Solution**: Add your classes to the classpath:
 
 ```bash
-java -cp "mapstruct-path-tool.jar:your-classes.jar:another-dependency.jar" \
+java -cp "mapstruct-path-explorer.jar:your-classes.jar:another-dependency.jar" \
   com.dsm.mapstruct.MapStructPathTool \
   "com.your.Class" "path"
 ```

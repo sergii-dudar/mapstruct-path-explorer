@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.dsm.mapstruct</groupId>
-    <artifactId>mapstruct-path-tool</artifactId>
+    <artifactId>mapstruct-path-explorer</artifactId>
     <version>0.0.1</version>
     <packaging>jar</packaging>
 
