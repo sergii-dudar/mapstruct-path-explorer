@@ -33,13 +33,14 @@ Very early draft state.
 
 ```bash
 cd mapstruct-path-explorer
-mvn clean package
+./mvnw clean package -U -DskipTests
 ```
 
 This will create two JAR files in the `target/` directory:
 
 - `mapstruct-path-explorer-*.jar` - Regular JAR
 - `mapstruct-path-explorer.jar` - Executable (FAT) JAR with all dependencies
+- for easy automatic installations [install_explorer script](./install_explorer.sh), it's installing\updating to `$HOME/tools/java-extensions/mapstruct`
 
 ## Usage
 
@@ -326,7 +327,7 @@ MapStructPathTool (Main)
 Run the unit tests:
 
 ```bash
-mvn test
+./mvnw test
 ```
 
 The test suite includes:
