@@ -1,6 +1,6 @@
-package com.dsm.mapstruct;
+package com.dsm.mapstruct.core.usecase.helper;
 
-import com.dsm.mapstruct.model.FieldInfo;
+import com.dsm.mapstruct.core.model.FieldInfo;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

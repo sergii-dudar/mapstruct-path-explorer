@@ -1,4 +1,7 @@
-package com.dsm.mapstruct.util;
+package com.dsm.mapstruct.core.util;
+
+import com.dsm.mapstruct.core.util.CollectionTypeResolverUtil;
+import lombok.experimental.UtilityClass;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -11,12 +14,13 @@ import java.util.Set;
 /**
  * Resolves generic type parameters from collection types.
  */
-public class CollectionTypeResolver {
+@UtilityClass
+public class CollectionTypeResolverUtil {
 
     /**
      * Checks if a class is a collection type.
      */
-    public boolean isCollection(Class<?> clazz) {
+    public static boolean isCollection(Class<?> clazz) {
         return clazz.isArray() ||
                Collection.class.isAssignableFrom(clazz) ||
                List.class.isAssignableFrom(clazz) ||
@@ -29,7 +33,7 @@ public class CollectionTypeResolver {
      * For arrays, returns component type
      * For raw types, returns Object.class
      */
-    public Class<?> resolveCollectionItemType(Class<?> ownerClass, String fieldName) {
+    public static Class<?> resolveCollectionItemType(Class<?> ownerClass, String fieldName) {
         try {
             // Try to find the field
             Field field = findField(ownerClass, fieldName);
@@ -52,7 +56,7 @@ public class CollectionTypeResolver {
     /**
      * Resolves the item type of a collection from a generic type.
      */
-    private Class<?> resolveCollectionItemType(Type genericType, Class<?> rawType) {
+    private static Class<?> resolveCollectionItemType(Type genericType, Class<?> rawType) {
         // Handle arrays
         if (rawType.isArray()) {
             return rawType.getComponentType();
@@ -82,7 +86,7 @@ public class CollectionTypeResolver {
      * - first() - Some collection libraries
      * - last() - Some collection libraries
      */
-    public boolean isCollectionAccessor(String methodName) {
+    public static boolean isCollectionAccessor(String methodName) {
         return methodName.equals("getFirst") ||
                methodName.equals("getLast") ||
                methodName.equals("get") ||
@@ -99,7 +103,7 @@ public class CollectionTypeResolver {
      *
      * These are the property names that MapStruct recognizes for collections.
      */
-    public boolean isMapStructCollectionProperty(String propertyName) {
+    public static boolean isMapStructCollectionProperty(String propertyName) {
         return propertyName.equals("first") ||
                propertyName.equals("last") ||
                propertyName.equals("empty");
@@ -109,7 +113,7 @@ public class CollectionTypeResolver {
      * Checks if a specific class type supports collection accessor methods.
      * Arrays do NOT support getFirst()/getLast() - only List and Deque interfaces do.
      */
-    public boolean supportsCollectionAccessors(Class<?> clazz) {
+    public static boolean supportsCollectionAccessors(Class<?> clazz) {
         // Arrays don't have getFirst/getLast methods
         if (clazz.isArray()) {
             return false;
@@ -122,7 +126,7 @@ public class CollectionTypeResolver {
      * For collection accessor methods, resolves the return type considering generics.
      * For example, if we call getFirst() on List<Person>, returns Person.class
      */
-    public Class<?> resolveCollectionAccessorReturnType(Class<?> collectionType, String methodName, Field sourceField) {
+    public static Class<?> resolveCollectionAccessorReturnType(Class<?> collectionType, String methodName, Field sourceField) {
         if (!isCollectionAccessor(methodName)) {
             return null;
         }
@@ -139,7 +143,7 @@ public class CollectionTypeResolver {
     /**
      * Finds a field in a class hierarchy.
      */
-    private Field findField(Class<?> clazz, String fieldName) {
+    private static Field findField(Class<?> clazz, String fieldName) {
         Class<?> current = clazz;
         while (current != null && current != Object.class) {
             try {

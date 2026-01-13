@@ -1,6 +1,8 @@
-package com.dsm.mapstruct.util;
+package com.dsm.mapstruct.core.util;
 
-import com.dsm.mapstruct.model.FieldInfo;
+import com.dsm.mapstruct.core.util.NameMatcherUtil;
+import com.dsm.mapstruct.core.model.FieldInfo;
+import lombok.experimental.UtilityClass;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -8,7 +10,8 @@ import java.util.stream.Collectors;
 /**
  * Utility for matching field names against prefixes.
  */
-public class NameMatcher {
+@UtilityClass
+public class NameMatcherUtil {
 
     /**
      * Filters fields by prefix (case-insensitive).
@@ -18,21 +21,21 @@ public class NameMatcher {
      * @param prefix the prefix to match (can be null or empty)
      * @return filtered list of fields matching the prefix
      */
-    public List<FieldInfo> filterByPrefix(List<FieldInfo> fields, String prefix) {
+    public static List<FieldInfo> filterByPrefix(List<FieldInfo> fields, String prefix) {
         if (prefix == null || prefix.isEmpty()) {
             return fields;
         }
 
         String lowerPrefix = prefix.toLowerCase();
         return fields.stream()
-            .filter(field -> field.name().toLowerCase().startsWith(lowerPrefix))
-            .collect(Collectors.toList());
+                .filter(field -> field.name().toLowerCase().startsWith(lowerPrefix))
+                .collect(Collectors.toList());
     }
 
     /**
      * Checks if a name matches a prefix (case-insensitive).
      */
-    public boolean matches(String name, String prefix) {
+    public static boolean matches(String name, String prefix) {
         if (prefix == null || prefix.isEmpty()) {
             return true;
         }

@@ -1,6 +1,7 @@
 package com.dsm.mapstruct;
 
-import com.dsm.mapstruct.model.FieldInfo;
+import com.dsm.mapstruct.core.usecase.helper.ReflectionAnalyzer;
+import com.dsm.mapstruct.core.model.FieldInfo;
 import com.dsm.mapstruct.testdata.TestClasses.*;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;

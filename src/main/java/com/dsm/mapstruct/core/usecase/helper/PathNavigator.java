@@ -1,10 +1,12 @@
-package com.dsm.mapstruct;
+package com.dsm.mapstruct.core.usecase.helper;
 
-import com.dsm.mapstruct.model.CompletionResult;
-import com.dsm.mapstruct.model.FieldInfo;
-import com.dsm.mapstruct.model.PathSegment;
-import com.dsm.mapstruct.util.CollectionTypeResolver;
-import com.dsm.mapstruct.util.NameMatcher;
+import com.dsm.mapstruct.core.model.CompletionResult;
+import com.dsm.mapstruct.core.model.FieldInfo;
+import com.dsm.mapstruct.core.model.PathSegment;
+import com.dsm.mapstruct.core.util.CollectionTypeResolverUtil;
+import com.dsm.mapstruct.core.util.NameMatcherUtil;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -12,19 +14,11 @@ import java.util.List;
 /**
  * Navigates through class structures following MapStruct path expressions.
  */
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PathNavigator {
 
-    private final PathParser pathParser;
-    private final ReflectionAnalyzer reflectionAnalyzer;
-    private final CollectionTypeResolver collectionTypeResolver;
-    private final NameMatcher nameMatcher;
-
-    public PathNavigator() {
-        this.pathParser = new PathParser();
-        this.reflectionAnalyzer = new ReflectionAnalyzer();
-        this.collectionTypeResolver = new CollectionTypeResolver();
-        this.nameMatcher = new NameMatcher();
-    }
+    PathParser pathParser = new PathParser();
+    ReflectionAnalyzer reflectionAnalyzer = new ReflectionAnalyzer();
 
     /**
      * Checks if a type is a terminal type that shouldn't have completions.
@@ -123,7 +117,7 @@ public class PathNavigator {
             List<FieldInfo> allFields = reflectionAnalyzer.getAllFieldsAndGetters(currentType);
 
             // Filter by prefix if needed
-            List<FieldInfo> filtered = nameMatcher.filterByPrefix(allFields, prefix);
+            List<FieldInfo> filtered = NameMatcherUtil.filterByPrefix(allFields, prefix);
 
             return CompletionResult.of(currentType.getName(),
                     currentType.getSimpleName(),
@@ -149,7 +143,7 @@ public class PathNavigator {
 
             // Check if this is a MapStruct collection accessor property (first, last, etc.)
             // MapStruct uses property syntax: orders.first (not orders.getFirst())
-            if (collectionTypeResolver.isMapStructCollectionProperty(segmentName) && collectionTypeResolver.isCollection(currentType)) {
+            if (CollectionTypeResolverUtil.isMapStructCollectionProperty(segmentName) && CollectionTypeResolverUtil.isCollection(currentType)) {
 
                 // This is a collection property accessor - resolve to item type
                 if (currentType.isArray()) {
@@ -157,8 +151,8 @@ public class PathNavigator {
                 }
 
                 // For List/Collection types, resolve generic type from last field
-                if (lastField != null && collectionTypeResolver.supportsCollectionAccessors(currentType)) {
-                    Class<?> itemType = collectionTypeResolver.resolveCollectionItemType(
+                if (lastField != null && CollectionTypeResolverUtil.supportsCollectionAccessors(currentType)) {
+                    Class<?> itemType = CollectionTypeResolverUtil.resolveCollectionItemType(
                             lastField.getDeclaringClass(),
                             lastField.getName()
                     );
@@ -187,9 +181,9 @@ public class PathNavigator {
             String methodName = segment.name();
 
             // Check if it's a collection accessor (getFirst, get, etc.)
-            if (collectionTypeResolver.isCollectionAccessor(methodName)) {
+            if (CollectionTypeResolverUtil.isCollectionAccessor(methodName)) {
                 // Need to resolve the item type from the current type (which should be a collection)
-                if (collectionTypeResolver.isCollection(currentType)) {
+                if (CollectionTypeResolverUtil.isCollection(currentType)) {
                     // Arrays: MapStruct doesn't support method calls on arrays
                     // Arrays should use array indexing like items[0] in MapStruct mappings
                     if (currentType.isArray()) {
@@ -199,14 +193,14 @@ public class PathNavigator {
                     }
 
                     // Check if this collection type actually supports the accessor method
-                    if (!collectionTypeResolver.supportsCollectionAccessors(currentType)) {
+                    if (!CollectionTypeResolverUtil.supportsCollectionAccessors(currentType)) {
                         // Return null to indicate invalid navigation
                         return null;
                     }
 
                     // Try to get generic type from last field
                     if (lastField != null) {
-                        Class<?> itemType = collectionTypeResolver.resolveCollectionItemType(
+                        Class<?> itemType = CollectionTypeResolverUtil.resolveCollectionItemType(
                                 lastField.getDeclaringClass(),
                                 lastField.getName()
                         );

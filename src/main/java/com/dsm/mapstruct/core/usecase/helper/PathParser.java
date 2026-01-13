@@ -1,6 +1,6 @@
-package com.dsm.mapstruct;
+package com.dsm.mapstruct.core.usecase.helper;
 
-import com.dsm.mapstruct.model.PathSegment;
+import com.dsm.mapstruct.core.model.PathSegment;
 
 import java.util.ArrayList;
 import java.util.List;

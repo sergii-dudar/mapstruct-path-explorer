@@ -2,7 +2,8 @@ package com.dsm.mapstruct;
 
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
-import com.dsm.mapstruct.model.CompletionResult;
+import com.dsm.mapstruct.core.usecase.helper.PathNavigator;
+import com.dsm.mapstruct.core.model.CompletionResult;
 import com.dsm.mapstruct.testdata.TestClasses.Company;
 import com.dsm.mapstruct.testdata.TestClasses.Order;
 import com.dsm.mapstruct.testdata.TestClasses.Person;

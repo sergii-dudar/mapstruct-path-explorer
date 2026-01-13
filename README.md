@@ -1,16 +1,12 @@
 # MapStruct Path Completion Tool
 
-A command-line tool that provides MapStruct-style path completion using Java reflection. This tool helps to explore nested object paths, navigate through collections, and discover available fields and getters at any point in your object graph.
+A command-line tool that provides MapStruct-style path completion using Java reflection. This tool helps to explore nested object paths, navigate through collections, and discover available fields and getters at any point in your object graph. Working as cmd one shoot tool or by IPC (Unix Domain Socket) to long running clients (like NeoVim).
 
 ## Why
 
 I love to work with java code as professional java software engineer in NeoVim. As also hard user of intellij in previous, I wanted to have similar mapping helping ability as provided by [Intellij MapStruct Pligin](https://plugins.jetbrains.com/plugin/10036-mapstruct-support).
 
 I have created this tool to use in pair with my neovim config with [blink.cmp](https://github.com/saghen/blink.cmp) completion source.
-
-## Tool Status
-
-Very early draft state.
 
 ## Features
 
@@ -21,6 +17,7 @@ Very early draft state.
 - Prefix matching for autocomplete suggestions
 - JSON output format for easy integration
 - Works with any Java class on the classpath
+- Be very lightweight
 
 ## Requirements
 
@@ -398,3 +395,11 @@ java -jar tool.jar "com.example.User" "address."
 ```bash
 java -version
 ```
+
+## Status
+
+ Implement core mapstruct path exploring functionality;
+ Covering all by unit tests with using mapstruct real mappers, and make init stabilization work;
+ Implement basic one shot runner from cmd (acceptable only for testing or not hard using (because of long class path usually, and it will have starting performance penalty because of that);
+ Implement lightweight IPC by using Uxin Domain Socket for communication by long running applications like NeoVim;
+ Testing and stabilization work.

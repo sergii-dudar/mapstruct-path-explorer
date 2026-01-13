@@ -1,4 +1,4 @@
-package com.dsm.mapstruct.model;
+package com.dsm.mapstruct.core.model;
 
 /**
  * Represents a segment of a MapStruct path expression.

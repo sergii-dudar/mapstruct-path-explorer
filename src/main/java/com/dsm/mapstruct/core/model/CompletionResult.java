@@ -1,4 +1,4 @@
-package com.dsm.mapstruct.model;
+package com.dsm.mapstruct.core.model;
 
 import java.util.List;
 

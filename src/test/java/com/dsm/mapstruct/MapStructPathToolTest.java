@@ -1,5 +1,6 @@
 package com.dsm.mapstruct;
 
+import com.dsm.mapstruct.adapter.api.cmd.CommandToolRunner;
 import com.dsm.mapstruct.testdata.TestClasses.Person;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -43,7 +44,7 @@ class MapStructPathToolTest {
         String className = Person.class.getName();
         String path = "";
 
-        int exitCode = MapStructPathTool.run(new String[]{className, path});
+        int exitCode = CommandToolRunner.run(new String[]{className, path});
 
         assertThat(exitCode).isEqualTo(0);
         String output = outContent.toString();
@@ -62,7 +63,7 @@ class MapStructPathToolTest {
         String className = Person.class.getName();
         String path = "address.";
 
-        int exitCode = MapStructPathTool.run(new String[]{className, path});
+        int exitCode = CommandToolRunner.run(new String[]{className, path});
 
         assertThat(exitCode).isEqualTo(0);
         String output = outContent.toString();
@@ -82,7 +83,7 @@ class MapStructPathToolTest {
         String className = Person.class.getName();
         String path = "first";
 
-        int exitCode = MapStructPathTool.run(new String[]{className, path});
+        int exitCode = CommandToolRunner.run(new String[]{className, path});
 
         assertThat(exitCode).isEqualTo(0);
         String output = outContent.toString();
@@ -100,7 +101,7 @@ class MapStructPathToolTest {
         String className = Person.class.getName();
         String path = "orders.first.";
 
-        int exitCode = MapStructPathTool.run(new String[]{className, path});
+        int exitCode = CommandToolRunner.run(new String[]{className, path});
 
         assertThat(exitCode).isEqualTo(0);
         String output = outContent.toString();
@@ -116,7 +117,7 @@ class MapStructPathToolTest {
 
     @Test
     void testRunWithMissingArguments() {
-        int exitCode = MapStructPathTool.run(new String[]{});
+        int exitCode = CommandToolRunner.run(new String[]{});
 
         assertThat(exitCode).isEqualTo(1);
         String errorOutput = errContent.toString();
@@ -126,7 +127,7 @@ class MapStructPathToolTest {
 
     @Test
     void testRunWithOnlyOneArgument() {
-        int exitCode = MapStructPathTool.run(new String[]{"com.example.User"});
+        int exitCode = CommandToolRunner.run(new String[]{"com.example.User"});
 
         assertThat(exitCode).isEqualTo(1);
         String errorOutput = errContent.toString();
@@ -138,7 +139,7 @@ class MapStructPathToolTest {
         String className = "com.example.NonExistentClass";
         String path = "";
 
-        int exitCode = MapStructPathTool.run(new String[]{className, path});
+        int exitCode = CommandToolRunner.run(new String[]{className, path});
 
         assertThat(exitCode).isEqualTo(1);
         String errorOutput = errContent.toString();
@@ -152,7 +153,7 @@ class MapStructPathToolTest {
         String className = Person.class.getName();
         String path = "nonExistentField.";
 
-        int exitCode = MapStructPathTool.run(new String[]{className, path});
+        int exitCode = CommandToolRunner.run(new String[]{className, path});
 
         assertThat(exitCode).isEqualTo(0);
         String output = outContent.toString();
@@ -167,7 +168,7 @@ class MapStructPathToolTest {
         String className = Person.class.getName();
         String path = "address.";
 
-        int exitCode = MapStructPathTool.run(new String[]{className, path});
+        int exitCode = CommandToolRunner.run(new String[]{className, path});
 
         assertThat(exitCode).isEqualTo(0);
         String output = outContent.toString();
@@ -193,7 +194,7 @@ class MapStructPathToolTest {
         String className = Person.class.getName();
         String path = "";
 
-        int exitCode = MapStructPathTool.run(new String[]{className, path});
+        int exitCode = CommandToolRunner.run(new String[]{className, path});
 
         assertThat(exitCode).isEqualTo(0);
         String output = outContent.toString();
@@ -208,7 +209,7 @@ class MapStructPathToolTest {
         String className = Person.class.getName();
         String path = "";
 
-        int exitCode = MapStructPathTool.run(new String[]{className, path});
+        int exitCode = CommandToolRunner.run(new String[]{className, path});
 
         assertThat(exitCode).isEqualTo(0);
         String output = outContent.toString();
@@ -229,7 +230,7 @@ class MapStructPathToolTest {
         String className = Person.class.getName();
         String path = "";
 
-        int exitCode = MapStructPathTool.run(new String[]{className, path});
+        int exitCode = CommandToolRunner.run(new String[]{className, path});
 
         assertThat(exitCode).isEqualTo(0);
         String output = outContent.toString();
@@ -253,7 +254,7 @@ class MapStructPathToolTest {
         String className = Person.class.getName();
         String path = "address.country.";
 
-        int exitCode = MapStructPathTool.run(new String[]{className, path});
+        int exitCode = CommandToolRunner.run(new String[]{className, path});
 
         assertThat(exitCode).isEqualTo(0);
         String output = outContent.toString();
@@ -272,7 +273,7 @@ class MapStructPathToolTest {
         String className = Person.class.getName();
         String path = "getAddress().";
 
-        int exitCode = MapStructPathTool.run(new String[]{className, path});
+        int exitCode = CommandToolRunner.run(new String[]{className, path});
 
         assertThat(exitCode).isEqualTo(0);
         String output = outContent.toString();
@@ -291,7 +292,7 @@ class MapStructPathToolTest {
         String className = Person.class.getName();
         String path = "FIRST"; // uppercase prefix
 
-        int exitCode = MapStructPathTool.run(new String[]{className, path});
+        int exitCode = CommandToolRunner.run(new String[]{className, path});
 
         assertThat(exitCode).isEqualTo(0);
         String output = outContent.toString();
@@ -305,15 +306,15 @@ class MapStructPathToolTest {
     @Test
     void testRunReturnsCorrectExitCodes() {
         // Success case
-        int exitCode = MapStructPathTool.run(new String[]{Person.class.getName(), ""});
+        int exitCode = CommandToolRunner.run(new String[]{Person.class.getName(), ""});
         assertThat(exitCode).isEqualTo(0);
 
         // Missing arguments case
-        exitCode = MapStructPathTool.run(new String[]{});
+        exitCode = CommandToolRunner.run(new String[]{});
         assertThat(exitCode).isEqualTo(1);
 
         // Class not found case
-        exitCode = MapStructPathTool.run(new String[]{"com.invalid.Class", ""});
+        exitCode = CommandToolRunner.run(new String[]{"com.invalid.Class", ""});
         assertThat(exitCode).isEqualTo(1);
     }
 }

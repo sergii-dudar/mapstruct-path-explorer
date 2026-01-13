@@ -1,4 +1,4 @@
-package com.dsm.mapstruct.model;
+package com.dsm.mapstruct.core.model;
 
 /**
  * Information about a field or getter method available for completion.
