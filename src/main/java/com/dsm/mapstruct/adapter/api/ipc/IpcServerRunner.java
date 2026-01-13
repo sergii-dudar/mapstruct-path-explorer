@@ -70,10 +70,10 @@ public class IpcServerRunner {
         System.err.println("MapStruct Path Completion - IPC:");
         System.err.println();
         System.err.println("Usage:");
-        System.err.println("  java -jar mapstruct-path-explorer.jar [unique process socketPath]");
+        System.err.println("  java -cp mapstruct-path-explorer.jar com.dsm.mapstruct.IpcServer [unique process socketPath]");
         System.err.println();
         System.err.println("With custom classpath:");
-        System.err.println("  java -cp \"mapstruct-path-explorer.jar:path/to/classes\"  [unique process socketPath]");
+        System.err.println("  java -cp \"mapstruct-path-explorer.jar:path/to/classes\" com.dsm.mapstruct.IpcServer [unique process socketPath]");
     }
 
     private static void printError(String message) {

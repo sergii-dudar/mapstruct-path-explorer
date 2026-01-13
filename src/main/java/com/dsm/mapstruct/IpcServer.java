@@ -7,6 +7,12 @@ import com.dsm.mapstruct.adapter.api.ipc.IpcServerRunner;
 //
 // socat STDIO UNIX-LISTEN:myuds,reuseaddr,fork
 // socat UNIX-CLIENT:myuds STDIO
+/**
+ * Main entry point for the MapStruct Path Completion IPC deamon.
+ *
+ * Usage example:
+ * java -cp mapstruct-path-explorer.jar:[app cp] com.dsm.mapstruct.IpcServer /tmp/test-ipc.sock
+ */
 public class IpcServer {
 
     public static void main(String[] args) {
