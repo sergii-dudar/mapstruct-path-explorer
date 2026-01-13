@@ -392,8 +392,8 @@ java -version
 
 ## Status
 
-[x] Implement core mapstruct path exploring functionality;
-[x] Covering all by unit tests with using mapstruct real mappers, and make init stabilization work;
-[x] Implement basic one shot runner from cmd (acceptable only for testing or not hard using (because of long class path usually, and it will have starting performance penalty because of that);
-[ ] Implement lightweight IPC by using Uxin Domain Socket for communication by long running applications like NeoVim;
-[ ] Testing and stabilization work.
+- [x] Implement core mapstruct path exploring functionality;
+- [x] Covering all by unit tests with using mapstruct real mappers, and make init stabilization work;
+- [x] Implement basic one shot runner from cmd (acceptable only for testing or not hard using (because of long class path usually, and it will have starting performance penalty because of that);
+- [ ] Implement lightweight IPC by using Uxin Domain Socket for communication by long running applications like NeoVim;
+- [ ] Testing and stabilization work.
