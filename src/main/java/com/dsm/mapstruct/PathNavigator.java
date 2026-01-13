@@ -37,21 +37,13 @@ public class PathNavigator {
         }
 
         // Wrapper types and String
-        return clazz == String.class ||
-               clazz == Integer.class ||
-               clazz == Long.class ||
-               clazz == Double.class ||
-               clazz == Float.class ||
-               clazz == Boolean.class ||
-               clazz == Byte.class ||
-               clazz == Short.class ||
-               clazz == Character.class;
+        return clazz == String.class || clazz == Integer.class || clazz == Long.class || clazz == Double.class || clazz == Float.class || clazz == Boolean.class || clazz == Byte.class || clazz == Short.class || clazz == Character.class;
     }
 
     /**
      * Navigates through the path and returns completion candidates.
      *
-     * @param rootClass the starting class
+     * @param rootClass      the starting class
      * @param pathExpression the MapStruct path expression
      * @return completion result with available fields/getters
      */
@@ -62,11 +54,17 @@ public class PathNavigator {
             if (segments.isEmpty()) {
                 // No path - check if root class is terminal type
                 if (isTerminalType(rootClass)) {
-                    return CompletionResult.empty(rootClass.getName(), pathExpression);
+                    return CompletionResult.empty(rootClass.getName(),
+                            rootClass.getSimpleName(),
+                            rootClass.getPackageName(),
+                            pathExpression);
                 }
                 // Return all fields and getters from root class
                 List<FieldInfo> allFields = reflectionAnalyzer.getAllFieldsAndGetters(rootClass);
-                return CompletionResult.of(rootClass.getName(), pathExpression, allFields);
+                return CompletionResult.of(rootClass.getName(),
+                        rootClass.getSimpleName(),
+                        rootClass.getPackageName(),
+                        pathExpression, allFields);
             }
 
             // Navigate through the path
@@ -79,7 +77,10 @@ public class PathNavigator {
 
                 if (nextType == null) {
                     // Cannot navigate further
-                    return CompletionResult.empty(rootClass.getName(), pathExpression);
+                    return CompletionResult.empty(rootClass.getName(),
+                            rootClass.getSimpleName(),
+                            rootClass.getPackageName(),
+                            pathExpression);
                 }
 
                 // Update lastField if this was a field access
@@ -100,7 +101,10 @@ public class PathNavigator {
                 if (!prefix.isEmpty()) {
                     Class<?> nextType = resolveNextType(currentType, lastSegment, lastField);
                     if (nextType == null) {
-                        return CompletionResult.empty(rootClass.getName(), pathExpression);
+                        return CompletionResult.empty(rootClass.getName(),
+                                rootClass.getSimpleName(),
+                                rootClass.getPackageName(),
+                                pathExpression);
                     }
                     currentType = nextType;
                 }
@@ -109,7 +113,10 @@ public class PathNavigator {
 
             // Check if current type is terminal - return empty if so
             if (isTerminalType(currentType)) {
-                return CompletionResult.empty(currentType.getName(), pathExpression);
+                return CompletionResult.empty(currentType.getName(),
+                        currentType.getSimpleName(),
+                        currentType.getPackageName(),
+                        pathExpression);
             }
 
             // Get all fields and getters from current type
@@ -118,11 +125,18 @@ public class PathNavigator {
             // Filter by prefix if needed
             List<FieldInfo> filtered = nameMatcher.filterByPrefix(allFields, prefix);
 
-            return CompletionResult.of(currentType.getName(), pathExpression, filtered);
+            return CompletionResult.of(currentType.getName(),
+                    currentType.getSimpleName(),
+                    currentType.getPackageName(),
+                    pathExpression,
+                    filtered);
 
         } catch (Exception e) {
             // Return empty result on error
-            return CompletionResult.empty(rootClass.getName(), pathExpression);
+            return CompletionResult.empty(rootClass.getName(),
+                    rootClass.getSimpleName(),
+                    rootClass.getPackageName(),
+                    pathExpression);
         }
     }
 
@@ -135,8 +149,7 @@ public class PathNavigator {
 
             // Check if this is a MapStruct collection accessor property (first, last, etc.)
             // MapStruct uses property syntax: orders.first (not orders.getFirst())
-            if (collectionTypeResolver.isMapStructCollectionProperty(segmentName) &&
-                collectionTypeResolver.isCollection(currentType)) {
+            if (collectionTypeResolver.isMapStructCollectionProperty(segmentName) && collectionTypeResolver.isCollection(currentType)) {
 
                 // This is a collection property accessor - resolve to item type
                 if (currentType.isArray()) {
@@ -146,8 +159,8 @@ public class PathNavigator {
                 // For List/Collection types, resolve generic type from last field
                 if (lastField != null && collectionTypeResolver.supportsCollectionAccessors(currentType)) {
                     Class<?> itemType = collectionTypeResolver.resolveCollectionItemType(
-                        lastField.getDeclaringClass(),
-                        lastField.getName()
+                            lastField.getDeclaringClass(),
+                            lastField.getName()
                     );
                     if (itemType != null && itemType != Object.class) {
                         return itemType;
@@ -194,8 +207,8 @@ public class PathNavigator {
                     // Try to get generic type from last field
                     if (lastField != null) {
                         Class<?> itemType = collectionTypeResolver.resolveCollectionItemType(
-                            lastField.getDeclaringClass(),
-                            lastField.getName()
+                                lastField.getDeclaringClass(),
+                                lastField.getName()
                         );
                         if (itemType != null && itemType != Object.class) {
                             return itemType;

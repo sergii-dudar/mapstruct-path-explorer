@@ -3,6 +3,8 @@ package com.dsm.mapstruct.integration;
 import com.dsm.mapstruct.integration.dto.*;
 import com.dsm.mapstruct.integration.mapper.TestMapper;
 import com.dsm.mapstruct.testdata.TestClasses.*;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,81 +19,94 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Integration tests that verify MapStruct path expressions work correctly
  * with real MapStruct mappers for all path navigation scenarios.
  */
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @DisplayName("MapStruct Integration Tests - Real Mapper Validation")
 class MapStructIntegrationTest {
 
-    private TestMapper mapper;
-    private Person testPerson;
-    private Company testCompany;
-    private Order testOrder;
+    TestMapper mapper;
+    Person testPerson;
+    Company testCompany;
+    Order testOrder;
 
     @BeforeEach
     void setUp() {
-        mapper = Mappers.getMapper(TestMapper.class);
+        this.mapper = Mappers.getMapper(TestMapper.class);
         setupTestData();
     }
 
     private void setupTestData() {
         // Create test country
-        Country usa = new Country();
-        usa.name = "United States";
-        usa.code = "US";
+        Country usa = Country.builder()
+                .name("United States")
+                .code("US")
+                .build();
 
         // Create test address
-        Address address = new Address();
-        address.street = "123 Main St";
-        address.city = "Springfield";
-        address.state = "IL";
-        address.zipCode = "62701";
-        address.country = usa;
+        Address address = Address.builder()
+                .street("123 Main St")
+                .city("Springfield")
+                .state("IL")
+                .zipCode("62701")
+                .country(usa)
+                .build();
 
         // Create test product
-        Product product = new Product();
-        product.name = "Laptop";
-        product.sku = "SKU-001";
-        product.price = 999.99;
+        Product product = Product.builder()
+                .name("Laptop")
+                .sku("SKU-001")
+                .price(999.99)
+                .build();
 
         // Create order item
-        OrderItem orderItem = new OrderItem();
-        orderItem.product = product;
-        orderItem.quantity = 2;
-        orderItem.price = 1999.98;
+        OrderItem orderItem = OrderItem.builder()
+                .product(product)
+                .quantity(2)
+                .price(1999.98)
+                .build();
 
         // Create person
-        testPerson = new Person();
-        testPerson.firstName = "John";
-        testPerson.lastName = "Doe";
-        testPerson.age = 30;
-        testPerson.address = address;
+        this.testPerson = Person.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .age(30)
+                .address(address)
+                .build();
 
         // Create order
-        testOrder = new Order();
-        testOrder.orderId = "ORD-123";
-        testOrder.items = Arrays.asList(orderItem);
-        testOrder.customer = testPerson;
+        this.testOrder = Order.builder()
+                .orderId("ORD-123")
+                .items(Arrays.asList(orderItem))
+                .customer(this.testPerson)
+                .build();
 
-        testPerson.orders = Arrays.asList(testOrder);
+        this.testPerson = this.testPerson.toBuilder()
+                .orders(Arrays.asList(this.testOrder))
+                .build();
 
         // Create company with employees
-        Person employee1 = new Person();
-        employee1.firstName = "Alice";
-        employee1.lastName = "Smith";
-        employee1.age = 28;
+        Person employee1 = Person.builder()
+                .firstName("Alice")
+                .lastName("Smith")
+                .age(28)
+                .build();
 
-        Person employee2 = new Person();
-        employee2.firstName = "Bob";
-        employee2.lastName = "Johnson";
-        employee2.age = 35;
+        Person employee2 = Person.builder()
+                .firstName("Bob")
+                .lastName("Johnson")
+                .age(35)
 
-        Department department = new Department();
-        department.name = "Engineering";
-        department.head = employee1;
-        department.members = Arrays.asList(employee1, employee2);
+                .build();
+        Department department = Department.builder()
+                .name("Engineering")
+                .head(employee1)
+                .members(Arrays.asList(employee1, employee2))
+                .build();
 
-        testCompany = new Company();
-        testCompany.name = "Acme Corp";
-        testCompany.employees = new Person[]{employee1, employee2};
-        testCompany.departments = Arrays.asList(department);
+        this.testCompany = Company.builder()
+                .name("Acme Corp")
+                .employees(new Person[]{employee1, employee2})
+                .departments(Arrays.asList(department))
+                .build();
     }
 
     @Test
@@ -258,11 +273,11 @@ class MapStructIntegrationTest {
     @Test
     @DisplayName("Null safety - null nested object")
     void testNullSafety() {
-        Person personWithoutAddress = new Person();
-        personWithoutAddress.firstName = "Jane";
-        personWithoutAddress.lastName = "Smith";
-        personWithoutAddress.age = 25;
-        personWithoutAddress.address = null;
+        Person personWithoutAddress = Person.builder()
+                .firstName("Jane")
+                .lastName("Smith")
+                .age(25)
+                .build();
 
         // Test path: address.city (address is null)
         NestedFieldDTO result = mapper.mapNestedField(personWithoutAddress);
@@ -274,18 +289,19 @@ class MapStructIntegrationTest {
     @Test
     @DisplayName("Null safety - empty collection throws exception")
     void testNullSafetyEmptyCollection() {
-        Person personWithoutOrders = new Person();
-        personWithoutOrders.firstName = "Jane";
-        personWithoutOrders.lastName = "Smith";
-        personWithoutOrders.age = 25;
-        personWithoutOrders.orders = List.of();
+        Person personWithoutOrders = Person.builder()
+                .firstName("Jane")
+                .lastName("Smith")
+                .age(25)
+                .orders(List.of())
+                .build();
 
         // Test path: orders.first.orderId (orders is empty)
         // MapStruct's .first accessor throws NoSuchElementException on empty collections
         // This is expected behavior - MapStruct does not provide null-safe collection access by default
         org.junit.jupiter.api.Assertions.assertThrows(
-            java.util.NoSuchElementException.class,
-            () -> mapper.mapCollectionFirst(personWithoutOrders)
+                java.util.NoSuchElementException.class,
+                () -> mapper.mapCollectionFirst(personWithoutOrders)
         );
     }
 
@@ -319,9 +335,9 @@ class MapStructIntegrationTest {
 
         assertThat(result).isNotNull();
         assertThat(result.getFullAddress())
-            .contains("Springfield")
-            .contains("IL")
-            .contains("62701");
+                .contains("Springfield")
+                .contains("IL")
+                .contains("62701");
     }
 
     @Test

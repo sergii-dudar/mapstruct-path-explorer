@@ -1,21 +1,19 @@
 package com.dsm.mapstruct;
 
 import com.dsm.mapstruct.model.FieldInfo;
-import com.dsm.mapstruct.testdata.TestClasses.Person;
-import com.dsm.mapstruct.testdata.TestClasses.Address;
-import com.dsm.mapstruct.testdata.TestClasses.PersonRecord;
-import com.dsm.mapstruct.testdata.TestClasses.AddressRecord;
-import com.dsm.mapstruct.testdata.TestClasses.CountryRecord;
-import com.dsm.mapstruct.testdata.TestClasses.OrderRecord;
+import com.dsm.mapstruct.testdata.TestClasses.*;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 class ReflectionAnalyzerTest {
 
-    private final ReflectionAnalyzer analyzer = new ReflectionAnalyzer();
+    ReflectionAnalyzer analyzer = new ReflectionAnalyzer();
 
     @Test
     void testGetAllFields() {
@@ -23,7 +21,7 @@ class ReflectionAnalyzerTest {
 
         assertThat(fields).isNotEmpty();
         assertThat(fields).extracting(FieldInfo::name)
-            .contains("firstName", "lastName", "age", "address", "orders");
+                .contains("firstName", "lastName", "age", "address", "orders");
         assertThat(fields).allMatch(f -> f.kind() == FieldInfo.FieldKind.FIELD);
     }
 
@@ -34,7 +32,7 @@ class ReflectionAnalyzerTest {
         assertThat(getters).isNotEmpty();
         // Getter names are transformed to MapStruct property format (getFirstName -> firstName)
         assertThat(getters).extracting(FieldInfo::name)
-            .contains("firstName", "lastName", "age", "address", "orders", "fullName");
+                .contains("firstName", "lastName", "age", "address", "orders", "fullName");
         assertThat(getters).allMatch(f -> f.kind() == FieldInfo.FieldKind.GETTER);
     }
 
@@ -45,7 +43,7 @@ class ReflectionAnalyzerTest {
         assertThat(all).hasSizeGreaterThanOrEqualTo(10); // At least 5 fields + 6 getters
         // Both fields and transformed getter names should be present
         assertThat(all).extracting(FieldInfo::name)
-            .contains("firstName", "address"); // Both appear as field and as transformed getter
+                .contains("firstName", "address"); // Both appear as field and as transformed getter
     }
 
     @Test
@@ -106,7 +104,7 @@ class ReflectionAnalyzerTest {
         List<FieldInfo> fields = analyzer.getAllFields(Address.class);
 
         assertThat(fields).extracting(FieldInfo::name)
-            .contains("street", "city", "state", "zipCode", "country");
+                .contains("street", "city", "state", "zipCode", "country");
     }
 
     @Test
@@ -114,9 +112,9 @@ class ReflectionAnalyzerTest {
         List<FieldInfo> fields = analyzer.getAllFieldsAndGetters(Address.class);
 
         FieldInfo streetField = fields.stream()
-            .filter(f -> f.name().equals("street"))
-            .findFirst()
-            .orElseThrow();
+                .filter(f -> f.name().equals("street"))
+                .findFirst()
+                .orElseThrow();
 
         assertThat(streetField.type()).isEqualTo("String");
     }
@@ -130,7 +128,7 @@ class ReflectionAnalyzerTest {
         assertThat(getters).isNotEmpty();
         // Record component accessor methods should be returned with their component names
         assertThat(getters).extracting(FieldInfo::name)
-            .contains("firstName", "lastName", "age");
+                .contains("firstName", "lastName", "age");
         assertThat(getters).allMatch(f -> f.kind() == FieldInfo.FieldKind.GETTER);
     }
 
@@ -139,16 +137,16 @@ class ReflectionAnalyzerTest {
         List<FieldInfo> getters = analyzer.getAllGetters(PersonRecord.class);
 
         FieldInfo firstNameGetter = getters.stream()
-            .filter(f -> f.name().equals("firstName"))
-            .findFirst()
-            .orElseThrow();
+                .filter(f -> f.name().equals("firstName"))
+                .findFirst()
+                .orElseThrow();
 
         assertThat(firstNameGetter.type()).isEqualTo("String");
 
         FieldInfo ageGetter = getters.stream()
-            .filter(f -> f.name().equals("age"))
-            .findFirst()
-            .orElseThrow();
+                .filter(f -> f.name().equals("age"))
+                .findFirst()
+                .orElseThrow();
 
         assertThat(ageGetter.type()).isEqualTo("int");
     }
@@ -167,12 +165,12 @@ class ReflectionAnalyzerTest {
         List<FieldInfo> getters = analyzer.getAllGetters(AddressRecord.class);
 
         assertThat(getters).extracting(FieldInfo::name)
-            .contains("street", "city", "zipCode", "country");
+                .contains("street", "city", "zipCode", "country");
 
         FieldInfo countryGetter = getters.stream()
-            .filter(f -> f.name().equals("country"))
-            .findFirst()
-            .orElseThrow();
+                .filter(f -> f.name().equals("country"))
+                .findFirst()
+                .orElseThrow();
 
         assertThat(countryGetter.type()).isEqualTo("CountryRecord");
     }
@@ -185,7 +183,7 @@ class ReflectionAnalyzerTest {
         // Now get fields from the nested record
         List<FieldInfo> countryGetters = analyzer.getAllGetters(countryType);
         assertThat(countryGetters).extracting(FieldInfo::name)
-            .contains("name", "code");
+                .contains("name", "code");
     }
 
     @Test
@@ -193,12 +191,12 @@ class ReflectionAnalyzerTest {
         List<FieldInfo> getters = analyzer.getAllGetters(OrderRecord.class);
 
         assertThat(getters).extracting(FieldInfo::name)
-            .contains("orderId", "items", "customer");
+                .contains("orderId", "items", "customer");
 
         FieldInfo itemsGetter = getters.stream()
-            .filter(f -> f.name().equals("items"))
-            .findFirst()
-            .orElseThrow();
+                .filter(f -> f.name().equals("items"))
+                .findFirst()
+                .orElseThrow();
 
         assertThat(itemsGetter.type()).isEqualTo("List");
     }
@@ -219,7 +217,7 @@ class ReflectionAnalyzerTest {
         // Should contain only getters (record component accessors)
         assertThat(all).isNotEmpty();
         assertThat(all).extracting(FieldInfo::name)
-            .contains("firstName", "lastName", "age");
+                .contains("firstName", "lastName", "age");
         assertThat(all).allMatch(f -> f.kind() == FieldInfo.FieldKind.GETTER);
     }
 }

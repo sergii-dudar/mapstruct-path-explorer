@@ -1,13 +1,10 @@
 package com.dsm.mapstruct.integration.dto;
 
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
 public class CollectionLastDTO {
-    private String lastOrderId;
-
-    public String getLastOrderId() {
-        return lastOrderId;
-    }
-
-    public void setLastOrderId(String lastOrderId) {
-        this.lastOrderId = lastOrderId;
-    }
+    String lastOrderId;
 }

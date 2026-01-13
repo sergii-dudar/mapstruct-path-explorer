@@ -1,13 +1,10 @@
 package com.dsm.mapstruct.integration.dto;
 
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
 public class SimpleFieldDTO {
-    private String name;
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
+    String name;
 }

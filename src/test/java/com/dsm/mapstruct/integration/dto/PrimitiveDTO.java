@@ -1,13 +1,10 @@
 package com.dsm.mapstruct.integration.dto;
 
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
 public class PrimitiveDTO {
-    private int age;
-
-    public int getAge() {
-        return age;
-    }
-
-    public void setAge(int age) {
-        this.age = age;
-    }
+    int age;
 }

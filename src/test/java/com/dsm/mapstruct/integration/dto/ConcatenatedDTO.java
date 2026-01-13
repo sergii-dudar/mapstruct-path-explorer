@@ -1,13 +1,10 @@
 package com.dsm.mapstruct.integration.dto;
 
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
 public class ConcatenatedDTO {
-    private String fullAddress;
-
-    public String getFullAddress() {
-        return fullAddress;
-    }
-
-    public void setFullAddress(String fullAddress) {
-        this.fullAddress = fullAddress;
-    }
+    String fullAddress;
 }

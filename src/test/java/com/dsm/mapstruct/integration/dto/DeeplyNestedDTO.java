@@ -1,13 +1,10 @@
 package com.dsm.mapstruct.integration.dto;
 
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
 public class DeeplyNestedDTO {
-    private String countryCode;
-
-    public String getCountryCode() {
-        return countryCode;
-    }
-
-    public void setCountryCode(String countryCode) {
-        this.countryCode = countryCode;
-    }
+    String countryCode;
 }

@@ -3,12 +3,13 @@ package com.dsm.mapstruct.integration;
 import com.dsm.mapstruct.integration.dto.*;
 import com.dsm.mapstruct.integration.mapper.RecordMapper;
 import com.dsm.mapstruct.testdata.TestClasses.*;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Integration tests for Java Records with MapStruct.
  * Validates that path navigation works correctly with record types.
  */
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @DisplayName("MapStruct Integration Tests - Java Records")
 class RecordMappingTest {
 
@@ -36,10 +38,10 @@ class RecordMappingTest {
 
         // Create test address record
         AddressRecord addressRecord = new AddressRecord(
-            "123 Main St",
-            "Springfield",
-            "62701",
-            usaRecord
+                "123 Main St",
+                "Springfield",
+                "62701",
+                usaRecord
         );
 
         // Create test product record
@@ -49,13 +51,13 @@ class RecordMappingTest {
         OrderItemRecord orderItemRecord = new OrderItemRecord(productRecord, 2, 1999.98);
 
         // Create person record
-        testPersonRecord = new PersonRecord("John", "Doe", 30);
+        this.testPersonRecord = new PersonRecord("John", "Doe", 30);
 
         // Create order record
-        testOrderRecord = new OrderRecord(
-            "ORD-123",
-            List.of(orderItemRecord),
-            testPersonRecord
+        this.testOrderRecord = new OrderRecord(
+                "ORD-123",
+                List.of(orderItemRecord),
+                this.testPersonRecord
         );
     }
 
@@ -131,9 +133,9 @@ class RecordMappingTest {
     @DisplayName("Record null safety - null nested record")
     void testRecordNullSafety() {
         OrderRecord orderWithoutCustomer = new OrderRecord(
-            "ORD-456",
-            List.of(),
-            null
+                "ORD-456",
+                List.of(),
+                null
         );
 
         // Test path: customer.firstName (customer is null)
@@ -147,17 +149,17 @@ class RecordMappingTest {
     @DisplayName("Record empty collection throws exception")
     void testRecordEmptyCollection() {
         OrderRecord orderWithNoItems = new OrderRecord(
-            "ORD-789",
-            List.of(),
-            testPersonRecord
+                "ORD-789",
+                List.of(),
+                testPersonRecord
         );
 
         // Test path: items.first.product.name (items is empty)
         // MapStruct's .first accessor throws NoSuchElementException on empty collections
         // This is expected behavior - MapStruct does not provide null-safe collection access by default
         org.junit.jupiter.api.Assertions.assertThrows(
-            java.util.NoSuchElementException.class,
-            () -> mapper.mapOrderProductName(orderWithNoItems)
+                java.util.NoSuchElementException.class,
+                () -> mapper.mapOrderProductName(orderWithNoItems)
         );
     }
 

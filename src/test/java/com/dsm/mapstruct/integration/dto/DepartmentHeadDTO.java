@@ -1,13 +1,10 @@
 package com.dsm.mapstruct.integration.dto;
 
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
 public class DepartmentHeadDTO {
-    private String headName;
-
-    public String getHeadName() {
-        return headName;
-    }
-
-    public void setHeadName(String headName) {
-        this.headName = headName;
-    }
+    String headName;
 }

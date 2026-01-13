@@ -1,5 +1,7 @@
 package com.dsm.mapstruct;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 import com.dsm.mapstruct.model.CompletionResult;
 import com.dsm.mapstruct.testdata.TestClasses.Company;
 import com.dsm.mapstruct.testdata.TestClasses.Order;
@@ -11,9 +13,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 class PathNavigatorTest {
 
-    private final PathNavigator navigator = new PathNavigator();
+    PathNavigator navigator = new PathNavigator();
 
     @Test
     void testNavigateToRootClass() {

@@ -1,8 +1,10 @@
 package com.dsm.mapstruct;
 
+import com.dsm.mapstruct.testdata.TestClasses.Person;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.dsm.mapstruct.testdata.TestClasses.Person;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,13 +17,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Tests for the MapStructPathTool main method.
  */
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 class MapStructPathToolTest {
 
-    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
-    private final PrintStream originalOut = System.out;
-    private final PrintStream originalErr = System.err;
-    private final Gson gson = new Gson();
+    ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+    ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+    PrintStream originalOut = System.out;
+    PrintStream originalErr = System.err;
+    Gson gson = new Gson();
 
     @BeforeEach
     void setUpStreams() {

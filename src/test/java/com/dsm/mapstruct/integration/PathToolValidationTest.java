@@ -5,6 +5,8 @@ import com.dsm.mapstruct.integration.mapper.TestMapper;
 import com.dsm.mapstruct.model.CompletionResult;
 import com.dsm.mapstruct.model.FieldInfo;
 import com.dsm.mapstruct.testdata.TestClasses.*;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,82 +26,93 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 2. Verify expected paths are in the suggestions
  * 3. Verify those paths actually work in MapStruct mappings
  */
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @DisplayName("Path Tool Validation - Tool Output Works with MapStruct")
 class PathToolValidationTest {
 
-    private PathNavigator pathNavigator;
-    private TestMapper mapper;
-    private Person testPerson;
-    private Company testCompany;
+    PathNavigator pathNavigator;
+    TestMapper mapper;
+    Person testPerson;
+    Company testCompany;
 
     @BeforeEach
     void setUp() {
-        pathNavigator = new PathNavigator();
-        mapper = Mappers.getMapper(TestMapper.class);
+        this.pathNavigator = new PathNavigator();
+        this.mapper = Mappers.getMapper(TestMapper.class);
         setupTestData();
     }
 
     private void setupTestData() {
         // Create test country
-        Country usa = new Country();
-        usa.name = "United States";
-        usa.code = "US";
+        Country usa = Country.builder()
+                .name("United States")
+                .code("US")
+                .build();
 
         // Create test address
-        Address address = new Address();
-        address.street = "123 Main St";
-        address.city = "Springfield";
-        address.state = "IL";
-        address.zipCode = "62701";
-        address.country = usa;
+        Address address = Address.builder()
+                .street("123 Main St")
+                .city("Springfield")
+                .state("IL")
+                .zipCode("62701")
+                .country(usa)
+                .build();
 
         // Create test product
-        Product product = new Product();
-        product.name = "Laptop";
-        product.sku = "SKU-001";
-        product.price = 999.99;
+        Product product = Product.builder()
+                .name("Laptop")
+                .sku("SKU-001")
+                .price(999.99)
+                .build();
 
         // Create order item
-        OrderItem orderItem = new OrderItem();
-        orderItem.product = product;
-        orderItem.quantity = 2;
-        orderItem.price = 1999.98;
-
-        // Create person
-        testPerson = new Person();
-        testPerson.firstName = "John";
-        testPerson.lastName = "Doe";
-        testPerson.age = 30;
-        testPerson.address = address;
+        OrderItem orderItem = OrderItem.builder()
+                .product(product)
+                .quantity(2)
+                .price(1999.98)
+                .build();
 
         // Create order
-        Order testOrder = new Order();
-        testOrder.orderId = "ORD-123";
-        testOrder.items = Arrays.asList(orderItem);
-        testOrder.customer = testPerson;
+        Order testOrder = Order.builder()
+                .orderId("ORD-123")
+                .items(Arrays.asList(orderItem))
+                .customer(testPerson)
+                .build();
 
-        testPerson.orders = Arrays.asList(testOrder);
+        // Create person
+        testPerson = Person.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .age(30)
+                .address(address)
+                .orders(Arrays.asList(testOrder))
+                .build();
+
 
         // Create company with employees
-        Person employee1 = new Person();
-        employee1.firstName = "Alice";
-        employee1.lastName = "Smith";
-        employee1.age = 28;
+        Person employee1 = Person.builder()
+                .firstName("Alice")
+                .lastName("Smith")
+                .age(28)
+                .build();
 
-        Person employee2 = new Person();
-        employee2.firstName = "Bob";
-        employee2.lastName = "Johnson";
-        employee2.age = 35;
+        Person employee2 = Person.builder()
+                .firstName("Bob")
+                .lastName("Johnson")
+                .age(35)
+                .build();
 
-        Department department = new Department();
-        department.name = "Engineering";
-        department.head = employee1;
-        department.members = Arrays.asList(employee1, employee2);
+        Department department = Department.builder()
+                .name("Engineering")
+                .head(employee1)
+                .members(Arrays.asList(employee1, employee2))
+                .build();
 
-        testCompany = new Company();
-        testCompany.name = "Acme Corp";
-        testCompany.employees = new Person[]{employee1, employee2};
-        testCompany.departments = Arrays.asList(department);
+        this.testCompany = Company.builder()
+                .name("Acme Corp")
+                .employees(new Person[]{employee1, employee2})
+                .departments(Arrays.asList(department))
+                .build();
     }
 
     @Test
@@ -111,10 +124,10 @@ class PathToolValidationTest {
         // Step 2: Verify 'firstName' is in suggestions
         assertThat(result.completions()).isNotEmpty();
         boolean hasFirstName = result.completions().stream()
-            .anyMatch(f -> f.name().equals("firstName"));
+                .anyMatch(f -> f.name().equals("firstName"));
         assertThat(hasFirstName)
-            .withFailMessage("Tool should suggest 'firstName' field")
-            .isTrue();
+                .withFailMessage("Tool should suggest 'firstName' field")
+                .isTrue();
 
         // Step 3: Verify the path 'firstName' works in MapStruct
         // Using mapper: @Mapping(target = "name", source = "firstName")
@@ -131,10 +144,10 @@ class PathToolValidationTest {
         // Step 2: Verify 'city' is in suggestions
         assertThat(result.completions()).isNotEmpty();
         boolean hasCity = result.completions().stream()
-            .anyMatch(f -> f.name().equals("city"));
+                .anyMatch(f -> f.name().equals("city"));
         assertThat(hasCity)
-            .withFailMessage("Tool should suggest 'city' field after 'address.'")
-            .isTrue();
+                .withFailMessage("Tool should suggest 'city' field after 'address.'")
+                .isTrue();
 
         // Step 3: Verify the complete path 'address.city' works in MapStruct
         // Using mapper: @Mapping(target = "cityName", source = "address.city")
@@ -151,10 +164,10 @@ class PathToolValidationTest {
         // Step 2: Verify 'code' is in suggestions
         assertThat(result.completions()).isNotEmpty();
         boolean hasCode = result.completions().stream()
-            .anyMatch(f -> f.name().equals("code"));
+                .anyMatch(f -> f.name().equals("code"));
         assertThat(hasCode)
-            .withFailMessage("Tool should suggest 'code' field after 'address.country.'")
-            .isTrue();
+                .withFailMessage("Tool should suggest 'code' field after 'address.country.'")
+                .isTrue();
 
         // Step 3: Verify the complete path 'address.country.code' works in MapStruct
         // Using mapper: @Mapping(target = "countryCode", source = "address.country.code")
@@ -171,18 +184,18 @@ class PathToolValidationTest {
         // Step 2: Verify 'first' is in suggestions (MapStruct collection property)
         assertThat(result.completions()).isNotEmpty();
         boolean hasFirst = result.completions().stream()
-            .anyMatch(f -> f.name().equals("first"));
+                .anyMatch(f -> f.name().equals("first"));
         assertThat(hasFirst)
-            .withFailMessage("Tool should suggest 'first' collection accessor after 'orders.'")
-            .isTrue();
+                .withFailMessage("Tool should suggest 'first' collection accessor after 'orders.'")
+                .isTrue();
 
         // Step 3: Get suggestions after 'orders.first.'
         CompletionResult afterFirst = pathNavigator.navigate(Person.class, "orders.first.");
         boolean hasOrderId = afterFirst.completions().stream()
-            .anyMatch(f -> f.name().equals("orderId"));
+                .anyMatch(f -> f.name().equals("orderId"));
         assertThat(hasOrderId)
-            .withFailMessage("Tool should suggest 'orderId' after 'orders.first.'")
-            .isTrue();
+                .withFailMessage("Tool should suggest 'orderId' after 'orders.first.'")
+                .isTrue();
 
         // Step 4: Verify the complete path 'orders.first.orderId' works in MapStruct
         // Using mapper: @Mapping(target = "firstOrderId", source = "orders.first.orderId")
@@ -198,32 +211,32 @@ class PathToolValidationTest {
         // Step 1: orders.
         CompletionResult step1 = pathNavigator.navigate(Person.class, "orders.");
         assertThat(step1.completions().stream().anyMatch(f -> f.name().equals("first")))
-            .withFailMessage("Tool should suggest 'first' after 'orders.'")
-            .isTrue();
+                .withFailMessage("Tool should suggest 'first' after 'orders.'")
+                .isTrue();
 
         // Step 2: orders.first.
         CompletionResult step2 = pathNavigator.navigate(Person.class, "orders.first.");
         assertThat(step2.completions().stream().anyMatch(f -> f.name().equals("items")))
-            .withFailMessage("Tool should suggest 'items' after 'orders.first.'")
-            .isTrue();
+                .withFailMessage("Tool should suggest 'items' after 'orders.first.'")
+                .isTrue();
 
         // Step 3: orders.first.items.
         CompletionResult step3 = pathNavigator.navigate(Person.class, "orders.first.items.");
         assertThat(step3.completions().stream().anyMatch(f -> f.name().equals("first")))
-            .withFailMessage("Tool should suggest 'first' after 'orders.first.items.'")
-            .isTrue();
+                .withFailMessage("Tool should suggest 'first' after 'orders.first.items.'")
+                .isTrue();
 
         // Step 4: orders.first.items.first.
         CompletionResult step4 = pathNavigator.navigate(Person.class, "orders.first.items.first.");
         assertThat(step4.completions().stream().anyMatch(f -> f.name().equals("product")))
-            .withFailMessage("Tool should suggest 'product' after 'orders.first.items.first.'")
-            .isTrue();
+                .withFailMessage("Tool should suggest 'product' after 'orders.first.items.first.'")
+                .isTrue();
 
         // Step 5: orders.first.items.first.product.
         CompletionResult step5 = pathNavigator.navigate(Person.class, "orders.first.items.first.product.");
         assertThat(step5.completions().stream().anyMatch(f -> f.name().equals("name")))
-            .withFailMessage("Tool should suggest 'name' after 'orders.first.items.first.product.'")
-            .isTrue();
+                .withFailMessage("Tool should suggest 'name' after 'orders.first.items.first.product.'")
+                .isTrue();
 
         // Step 6: Verify the complete path works in MapStruct
         // Using mapper: @Mapping(target = "productName", source = "orders.first.items.first.product.name")
@@ -239,20 +252,20 @@ class PathToolValidationTest {
         // Step 1: departments.
         CompletionResult step1 = pathNavigator.navigate(Company.class, "departments.");
         assertThat(step1.completions().stream().anyMatch(f -> f.name().equals("first")))
-            .withFailMessage("Tool should suggest 'first' after 'departments.'")
-            .isTrue();
+                .withFailMessage("Tool should suggest 'first' after 'departments.'")
+                .isTrue();
 
         // Step 2: departments.first.
         CompletionResult step2 = pathNavigator.navigate(Company.class, "departments.first.");
         assertThat(step2.completions().stream().anyMatch(f -> f.name().equals("head")))
-            .withFailMessage("Tool should suggest 'head' after 'departments.first.'")
-            .isTrue();
+                .withFailMessage("Tool should suggest 'head' after 'departments.first.'")
+                .isTrue();
 
         // Step 3: departments.first.head.
         CompletionResult step3 = pathNavigator.navigate(Company.class, "departments.first.head.");
         assertThat(step3.completions().stream().anyMatch(f -> f.name().equals("firstName")))
-            .withFailMessage("Tool should suggest 'firstName' after 'departments.first.head.'")
-            .isTrue();
+                .withFailMessage("Tool should suggest 'firstName' after 'departments.first.head.'")
+                .isTrue();
 
         // Step 4: Verify the complete path works in MapStruct
         // Using mapper: @Mapping(target = "headName", source = "departments.first.head.firstName")
@@ -269,10 +282,10 @@ class PathToolValidationTest {
         // Step 2: Verify 'fullName' getter is in suggestions
         assertThat(result.completions()).isNotEmpty();
         boolean hasFullName = result.completions().stream()
-            .anyMatch(f -> f.name().equals("fullName") && f.kind() == FieldInfo.FieldKind.GETTER);
+                .anyMatch(f -> f.name().equals("fullName") && f.kind() == FieldInfo.FieldKind.GETTER);
         assertThat(hasFullName)
-            .withFailMessage("Tool should suggest 'fullName' getter method")
-            .isTrue();
+                .withFailMessage("Tool should suggest 'fullName' getter method")
+                .isTrue();
 
         // Step 3: Verify the path 'fullName' works in MapStruct
         // Using mapper: @Mapping(target = "fullName", source = "fullName")
@@ -287,8 +300,8 @@ class PathToolValidationTest {
         CompletionResult result = pathNavigator.navigate(Person.class, "firstName.");
 
         assertThat(result.completions())
-            .withFailMessage("Tool should return empty suggestions after terminal type (String)")
-            .isEmpty();
+                .withFailMessage("Tool should return empty suggestions after terminal type (String)")
+                .isEmpty();
     }
 
     @Test
@@ -299,12 +312,12 @@ class PathToolValidationTest {
 
         // Should have firstName (field)
         boolean hasFirstName = result.completions().stream()
-            .anyMatch(f -> f.name().equals("firstName") && f.kind() == FieldInfo.FieldKind.FIELD);
+                .anyMatch(f -> f.name().equals("firstName") && f.kind() == FieldInfo.FieldKind.FIELD);
         assertThat(hasFirstName).isTrue();
 
         // Should have fullName (getter method without field)
         boolean hasFullName = result.completions().stream()
-            .anyMatch(f -> f.name().equals("fullName") && f.kind() == FieldInfo.FieldKind.GETTER);
+                .anyMatch(f -> f.name().equals("fullName") && f.kind() == FieldInfo.FieldKind.GETTER);
         assertThat(hasFullName).isTrue();
 
         // Verify both work in MapStruct
@@ -376,13 +389,13 @@ class PathToolValidationTest {
 
         // Verify both 'first' and 'last' are suggested
         List<String> collectionAccessors = result.completions().stream()
-            .map(FieldInfo::name)
-            .filter(name -> name.equals("first") || name.equals("last"))
-            .toList();
+                .map(FieldInfo::name)
+                .filter(name -> name.equals("first") || name.equals("last"))
+                .toList();
 
         assertThat(collectionAccessors)
-            .withFailMessage("Tool should suggest both 'first' and 'last' collection accessors")
-            .containsExactlyInAnyOrder("first", "last");
+                .withFailMessage("Tool should suggest both 'first' and 'last' collection accessors")
+                .containsExactlyInAnyOrder("first", "last");
 
         // Verify 'orders.last.orderId' works in MapStruct
         var dto = mapper.mapCollectionLast(testPerson);

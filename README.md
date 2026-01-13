@@ -24,6 +24,7 @@ Very early draft state.
 
 ## Requirements
 
+- At least basic `java`, `jvm` and `jdk tools` knowledge
 - Java 25 or later
 - Maven 3.9.11+ (for building)
   NOTE: for now it's just my personal experiment, without attention to using by somebody else, because of that, I just using latest versions I need and what installed on my machines.
@@ -74,6 +75,8 @@ java -jar mapstruct-path-explorer.jar "com.example.User" ""
 ```json
 {
   "className": "com.example.User",
+  "simpleName": "User",
+  "packageName": "com.example",
   "path": "",
   "completions": [
     { "name": "address", "type": "Address", "kind": "FIELD" },
@@ -104,6 +107,8 @@ java -jar mapstruct-path-explorer.jar "com.example.User" "address."
 ```json
 {
   "className": "com.example.Address",
+  "simpleName": "Address",
+  "packageName": "com.example",
   "path": "address.",
   "completions": [
     { "name": "city", "type": "String", "kind": "FIELD" },
@@ -126,6 +131,8 @@ java -jar mapstruct-path-explorer.jar "com.example.User" "address.st"
 ```json
 {
   "className": "com.example.Address",
+  "simpleName": "Address",
+  "packageName": "com.example",
   "path": "address.st",
   "completions": [
     { "name": "state", "type": "String", "kind": "FIELD" },
@@ -147,6 +154,8 @@ java -jar mapstruct-path-explorer.jar "com.example.Order" "items.first."
 ```json
 {
   "className": "com.example.OrderItem",
+  "simpleName": "OrderItem",
+  "packageName": "com.example",
   "path": "items.first.",
   "completions": [
     { "name": "price", "type": "double", "kind": "FIELD" },
@@ -167,6 +176,8 @@ java -jar mapstruct-path-explorer.jar "com.example.Order" "items.first.product.n
 ```json
 {
   "className": "com.example.Product",
+  "simpleName": "Product",
+  "packageName": "com.example",
   "path": "items.first.product.name",
   "completions": [{ "name": "name", "type": "String", "kind": "FIELD" }]
 }
@@ -191,6 +202,8 @@ java -jar mapstruct-path-explorer.jar "com.example.PersonRecord" ""
 ```json
 {
   "className": "com.example.PersonRecord",
+  "simpleName": "PersonRecord",
+  "packageName": "com.example",
   "path": "",
   "completions": [
     { "name": "firstName", "type": "String", "kind": "GETTER" },
@@ -211,6 +224,8 @@ java -jar mapstruct-path-explorer.jar "com.example.AddressRecord" "country."
 ```json
 {
   "className": "com.example.CountryRecord",
+  "simpleName": "CountryRecord",
+  "packageName": "com.example",
   "path": "country.",
   "completions": [
     { "name": "name", "type": "String", "kind": "GETTER" },
@@ -232,6 +247,8 @@ java -jar mapstruct-path-explorer.jar "com.example.Person" "firstName."
 ```json
 {
   "className": "java.lang.String",
+  "simpleName": "String",
+  "packageName": "java.lang",
   "path": "firstName.",
   "completions": []
 }
@@ -295,7 +312,7 @@ MapStructPathTool (Main)
             │   └─> Parses path expressions
             │
             ├─> ReflectionAnalyzer
-            │   └─> Extracts fields and getters
+            │   └─> Extracts public fields and getters
             │
             ├─> CollectionTypeResolver
             │   └─> Resolves generic types

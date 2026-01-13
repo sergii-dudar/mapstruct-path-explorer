@@ -1,5 +1,7 @@
 package com.dsm.mapstruct;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
 import com.dsm.mapstruct.model.PathSegment;
 import org.junit.jupiter.api.Test;
 
@@ -7,9 +9,10 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 class PathParserTest {
 
-    private final PathParser parser = new PathParser();
+    PathParser parser = new PathParser();
 
     @Test
     void testParseSimpleFieldPath() {

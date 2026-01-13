@@ -1,6 +1,8 @@
 package com.dsm.mapstruct.testdata;
 
 import java.util.List;
+import lombok.Builder;
+import lombok.Value;
 
 /**
  * Test data classes for unit testing.
@@ -10,6 +12,8 @@ public class TestClasses {
     /**
      * Simple person class with fields and getters.
      */
+    @Value
+    @Builder(toBuilder = true)
     public static class Person {
         public String firstName;
         public String lastName;
@@ -45,6 +49,8 @@ public class TestClasses {
     /**
      * Address class with nested fields.
      */
+    @Value
+    @Builder
     public static class Address {
         public String street;
         public String city;
@@ -76,6 +82,8 @@ public class TestClasses {
     /**
      * Country class.
      */
+    @Value
+    @Builder
     public static class Country {
         public String name;
         public String code;
@@ -92,6 +100,8 @@ public class TestClasses {
     /**
      * Order class with items collection.
      */
+    @Value
+    @Builder
     public static class Order {
         public String orderId;
         public List<OrderItem> items;
@@ -113,6 +123,8 @@ public class TestClasses {
     /**
      * Order item class.
      */
+    @Value
+    @Builder
     public static class OrderItem {
         public Product product;
         public int quantity;
@@ -134,6 +146,8 @@ public class TestClasses {
     /**
      * Product class.
      */
+    @Value
+    @Builder
     public static class Product {
         public String name;
         public String sku;
@@ -155,6 +169,8 @@ public class TestClasses {
     /**
      * Company class with array of employees.
      */
+    @Value
+    @Builder
     public static class Company {
         public String name;
         public Person[] employees;
@@ -176,6 +192,8 @@ public class TestClasses {
     /**
      * Department class.
      */
+    @Value
+    @Builder
     public static class Department {
         public String name;
         public Person head;
@@ -197,36 +215,42 @@ public class TestClasses {
     /**
      * Simple Java record with basic fields.
      */
+    @Builder
     public record PersonRecord(String firstName, String lastName, int age) {
     }
 
     /**
      * Java record with nested record.
      */
+    @Builder
     public record AddressRecord(String street, String city, String zipCode, CountryRecord country) {
     }
 
     /**
      * Simple country record.
      */
+    @Builder
     public record CountryRecord(String name, String code) {
     }
 
     /**
      * Java record with collection.
      */
+    @Builder
     public record OrderRecord(String orderId, List<OrderItemRecord> items, PersonRecord customer) {
     }
 
     /**
      * Order item record.
      */
+    @Builder
     public record OrderItemRecord(ProductRecord product, int quantity, double price) {
     }
 
     /**
      * Product record.
      */
+    @Builder
     public record ProductRecord(String name, String sku, double price) {
     }
 }
