@@ -13,7 +13,7 @@ else
 fi
 
 cd "$ms_path_explorer_repo" \
-    && mvn clean package -U -DskipTests \
+    && ./mvnw clean package -U -DskipTests \
     && cd ./target \
     && mkdir -p "$ms_path_explorer_dir" \
     && mv "$ms_path_explorer_jar_name" "$ms_path_explorer_dir/"
