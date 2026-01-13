@@ -181,13 +181,7 @@ java -jar mapstruct-path-explorer.jar "com.example.Order" "items.first.product.n
 }
 ```
 
-### 6. Navigate Through Arrays
-
-```bash
-java -jar mapstruct-path-explorer.jar "com.example.Company" "employees.first.address."
-```
-
-### 7. Navigate Through Java Records
+### 6. Navigate Through Java Records
 
 Java records are fully supported. Record component accessor methods (like `name()`, `age()`) are treated as getters:
 
@@ -232,7 +226,7 @@ java -jar mapstruct-path-explorer.jar "com.example.AddressRecord" "country."
 }
 ```
 
-### 8. Terminal Types (Primitives and String)
+### 7. Terminal Types (Primitives and String)
 
 When navigating to primitive types, wrapper types, or String, the tool returns empty completions since these types don't have meaningful MapStruct properties:
 
@@ -398,8 +392,8 @@ java -version
 
 ## Status
 
- Implement core mapstruct path exploring functionality;
- Covering all by unit tests with using mapstruct real mappers, and make init stabilization work;
- Implement basic one shot runner from cmd (acceptable only for testing or not hard using (because of long class path usually, and it will have starting performance penalty because of that);
- Implement lightweight IPC by using Uxin Domain Socket for communication by long running applications like NeoVim;
- Testing and stabilization work.
+[x] Implement core mapstruct path exploring functionality;
+[x] Covering all by unit tests with using mapstruct real mappers, and make init stabilization work;
+[x] Implement basic one shot runner from cmd (acceptable only for testing or not hard using (because of long class path usually, and it will have starting performance penalty because of that);
+[ ] Implement lightweight IPC by using Uxin Domain Socket for communication by long running applications like NeoVim;
+[ ] Testing and stabilization work.
