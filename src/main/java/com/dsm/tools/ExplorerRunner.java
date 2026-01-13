@@ -4,9 +4,6 @@ import com.dsm.tools.core.usecase.ResolvePathUseCase;
 import com.dsm.tools.core.usecase.ResolvePathUseCase.ResolvePathParams;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Hello world!
- */
 @Slf4j
 public class ExplorerRunner {
     public static void main(String[] args) {
