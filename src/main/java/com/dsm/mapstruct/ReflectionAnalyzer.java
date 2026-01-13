@@ -1,0 +1,275 @@
+package com.dsm.mapstruct;
+
+import com.dsm.mapstruct.model.FieldInfo;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
+
+/**
+ * Analyzes Java classes using reflection to extract field and getter information.
+ */
+public class ReflectionAnalyzer {
+
+    /**
+     * Gets all accessible PUBLIC fields from a class, including inherited fields.
+     * Only public fields can be used in MapStruct mappings.
+     */
+    public List<FieldInfo> getAllFields(Class<?> clazz) {
+        List<FieldInfo> fields = new ArrayList<>();
+
+        // Get all fields including inherited ones
+        Class<?> current = clazz;
+        while (current != null && current != Object.class) {
+            for (Field field : current.getDeclaredFields()) {
+                // Skip synthetic, static, and non-public fields
+                if (field.isSynthetic() ||
+                    Modifier.isStatic(field.getModifiers()) ||
+                    !Modifier.isPublic(field.getModifiers())) {
+                    continue;
+                }
+
+                String typeName = getTypeName(field.getType());
+                fields.add(new FieldInfo(field.getName(), typeName, FieldInfo.FieldKind.FIELD));
+            }
+            current = current.getSuperclass();
+        }
+
+        return fields;
+    }
+
+    /**
+     * Gets all getter methods from a class.
+     * A getter is a public method that:
+     * - Starts with "get" or "is"
+     * - Takes no parameters
+     * - Returns a non-void value
+     *
+     * For Java records, also includes record component accessor methods:
+     * - name() → name
+     * - age() → age
+     *
+     * Names are transformed to MapStruct property format:
+     * - getFirstName() → firstName
+     * - isActive() → active
+     */
+    public List<FieldInfo> getAllGetters(Class<?> clazz) {
+        List<FieldInfo> getters = new ArrayList<>();
+
+        // For records, extract record component accessor methods
+        if (clazz.isRecord()) {
+            var recordComponents = clazz.getRecordComponents();
+            if (recordComponents != null) {
+                for (var component : recordComponents) {
+                    String componentName = component.getName();
+                    Class<?> componentType = component.getType();
+                    String typeName = getTypeName(componentType);
+                    getters.add(new FieldInfo(componentName, typeName, FieldInfo.FieldKind.GETTER));
+                }
+            }
+        }
+
+        // Regular getter methods
+        for (Method method : clazz.getMethods()) {
+            if (isGetter(method)) {
+                String typeName = getTypeName(method.getReturnType());
+                String propertyName = getPropertyNameFromGetter(method.getName());
+                getters.add(new FieldInfo(propertyName, typeName, FieldInfo.FieldKind.GETTER));
+            }
+        }
+
+        return getters;
+    }
+
+    /**
+     * Gets all fields and getters combined.
+     */
+    public List<FieldInfo> getAllFieldsAndGetters(Class<?> clazz) {
+        return Stream.concat(
+            getAllFields(clazz).stream(),
+            getAllGetters(clazz).stream()
+        ).toList();
+    }
+
+    /**
+     * Finds a field or getter by name in the class.
+     * Returns the type of the field/getter, or null if not found.
+     * For records, also checks record component accessor methods.
+     */
+    public Class<?> getFieldOrGetterType(Class<?> clazz, String name) {
+        // For records, check record components first
+        if (clazz.isRecord()) {
+            var recordComponents = clazz.getRecordComponents();
+            if (recordComponents != null) {
+                for (var component : recordComponents) {
+                    if (component.getName().equals(name)) {
+                        return component.getType();
+                    }
+                }
+            }
+        }
+
+        // Try to find as field first
+        Class<?> current = clazz;
+        while (current != null && current != Object.class) {
+            try {
+                Field field = current.getDeclaredField(name);
+                if (!Modifier.isStatic(field.getModifiers())) {
+                    return field.getType();
+                }
+            } catch (NoSuchFieldException e) {
+                // Continue to superclass
+            }
+            current = current.getSuperclass();
+        }
+
+        // Try to find as getter method
+        String getterName = "get" + capitalize(name);
+        String booleanGetterName = "is" + capitalize(name);
+
+        for (Method method : clazz.getMethods()) {
+            if ((method.getName().equals(name) ||
+                 method.getName().equals(getterName) ||
+                 method.getName().equals(booleanGetterName)) &&
+                isGetter(method)) {
+                return method.getReturnType();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Gets the return type of a method by name.
+     */
+    public Class<?> getMethodReturnType(Class<?> clazz, String methodName) {
+        try {
+            // Try common collection methods first
+            if (methodName.equals("getFirst") || methodName.equals("getLast")) {
+                // These methods are on List/Deque interfaces in Java 21
+                Method method = findMethod(clazz, methodName);
+                if (method != null) {
+                    return method.getReturnType();
+                }
+            }
+
+            if (methodName.equals("get")) {
+                // List.get(int) method
+                Method method = findMethod(clazz, methodName, int.class);
+                if (method != null) {
+                    return method.getReturnType();
+                }
+            }
+
+            // Try to find any public method with this name and no parameters
+            Method method = clazz.getMethod(methodName);
+            return method.getReturnType();
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Checks if a method is a getter.
+     */
+    private boolean isGetter(Method method) {
+        String name = method.getName();
+        return Modifier.isPublic(method.getModifiers()) &&
+               !Modifier.isStatic(method.getModifiers()) &&
+               method.getParameterCount() == 0 &&
+               method.getReturnType() != void.class &&
+               (name.startsWith("get") || name.startsWith("is"));
+    }
+
+    /**
+     * Finds a method by name and parameter types.
+     */
+    private Method findMethod(Class<?> clazz, String name, Class<?>... parameterTypes) {
+        try {
+            return clazz.getMethod(name, parameterTypes);
+        } catch (NoSuchMethodException e) {
+            // Check interfaces
+            for (Class<?> iface : clazz.getInterfaces()) {
+                Method method = findMethod(iface, name, parameterTypes);
+                if (method != null) {
+                    return method;
+                }
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Gets a readable type name for a class.
+     */
+    private String getTypeName(Class<?> clazz) {
+        if (clazz.isArray()) {
+            return getTypeName(clazz.getComponentType()) + "[]";
+        }
+        return clazz.getSimpleName();
+    }
+
+    /**
+     * Capitalizes the first letter of a string.
+     */
+    private String capitalize(String str) {
+        if (str == null || str.isEmpty()) {
+            return str;
+        }
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
+    }
+
+    /**
+     * Converts a getter method name to MapStruct property name format.
+     * Examples:
+     * - getFirstName → firstName
+     * - isActive → active
+     * - getURL → url (handles acronyms)
+     */
+    private String getPropertyNameFromGetter(String methodName) {
+        if (methodName.startsWith("get") && methodName.length() > 3) {
+            String propertyName = methodName.substring(3);
+            return decapitalize(propertyName);
+        } else if (methodName.startsWith("is") && methodName.length() > 2) {
+            String propertyName = methodName.substring(2);
+            return decapitalize(propertyName);
+        }
+        return methodName;
+    }
+
+    /**
+     * Decapitalizes the first letter of a string, handling acronyms correctly.
+     * Examples:
+     * - FirstName → firstName
+     * - URL → url
+     * - XMLParser → xmlParser
+     */
+    private String decapitalize(String str) {
+        if (str == null || str.isEmpty()) {
+            return str;
+        }
+        // If the string has more than one character and the second character is uppercase,
+        // it's likely an acronym, so lowercase the entire prefix
+        if (str.length() > 1 && Character.isUpperCase(str.charAt(1))) {
+            // Find where the acronym ends
+            int i = 0;
+            while (i < str.length() && Character.isUpperCase(str.charAt(i))) {
+                i++;
+            }
+            // If we reached the end or it's all uppercase, lowercase everything
+            if (i == str.length()) {
+                return str.toLowerCase();
+            }
+            // Otherwise, keep the last uppercase letter with the next part
+            // e.g., "XMLParser" -> "xml" + "Parser" -> "xmlParser"
+            if (i > 1) {
+                return str.substring(0, i - 1).toLowerCase() + str.substring(i - 1);
+            }
+        }
+        return str.substring(0, 1).toLowerCase() + str.substring(1);
+    }
+}

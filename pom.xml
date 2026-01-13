@@ -4,21 +4,26 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <name>mapstruct-explorer-app</name>
-    <groupId>com.dsm.tools</groupId>
-    <artifactId>mapstruct-explorer-app</artifactId>
+    <groupId>com.dsm.mapstruct</groupId>
+    <artifactId>mapstruct-path-tool</artifactId>
     <version>0.0.1</version>
+    <packaging>jar</packaging>
+
+    <name>MapStruct Path Completion Tool</name>
+    <description>Command-line tool for MapStruct path completion using reflection</description>
 
     <properties>
-        <!-- general config -->
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <main.class>com.dsm.tools.ExplorerRunner</main.class>
+        <main.class>com.dsm.mapstruct.MapStructPathTool</main.class>
 
         <!-- deps shared versions -->
         <lombok.version>1.18.42</lombok.version>
         <mapstruct.version>1.6.3</mapstruct.version>
+        <gson.version>2.10.1</gson.version>
+        <junit.version>5.10.1</junit.version>
+        <assertj.version>3.25.1</assertj.version>
     </properties>
 
     <dependencyManagement>
@@ -34,8 +39,34 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Utils -->
+        <!-- JSON processing -->
         <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${gson.version}</version>
+        </dependency>
+
+        <!-- SLF4J -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.17</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.5.24</version>
+        </dependency>
+
+        <!-- Lombok / Mapstruct -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+        </dependency>
+
+        <!-- Utils -->
+        <!-- <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>33.5.0-jre</version>
@@ -56,33 +87,9 @@
             <artifactId>streamex</artifactId>
             <version>0.8.4</version>
             <scope>compile</scope>
-        </dependency>
+        </dependency> -->
 
-        <!-- Lombok / Mapstruct -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-            <version>${mapstruct.version}</version>
-        </dependency>
-
-        <!-- SLF4J -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>2.0.17</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.5.24</version>
-        </dependency>
-
-        <!-- Junit -->
+        <!-- Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -99,10 +106,17 @@
             <version>3.27.6</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!-- Compiler plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -110,6 +124,7 @@
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
+                    <release>${maven.compiler.target}</release>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.mapstruct</groupId>
@@ -134,11 +149,15 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
+
+            <!-- Surefire plugin for running tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.4</version>
             </plugin>
+
+            <!-- Assembly plugin for creating executable JAR with dependencies -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
