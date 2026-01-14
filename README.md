@@ -1,6 +1,6 @@
 # MapStruct Path Completion Tool
 
-A command-line tool that provides MapStruct-style path completion using Java reflection. This tool helps to explore nested object paths, navigate through collections, and discover available fields and getters at any point in your object graph. Working as cmd one shoot tool or by IPC (Unix Domain Socket) to long running clients (like NeoVim).
+A command-line tool (with IPC support) that provides MapStruct-style path completion using Java reflection. This tool helps to explore nested object paths, navigate through collections, and discover available fields and getters at any point in your object graph. Working as cmd one shoot tool or by IPC (Unix Domain Socket) to long running clients (like NeoVim).
 
 ## Why
 
@@ -41,6 +41,15 @@ This will create two JAR files in the `target/` directory:
 - `mapstruct-path-explorer-*.jar` - Regular JAR
 - `mapstruct-path-explorer.jar` - Executable (FAT) JAR with all dependencies
 - for easy automatic installations [install_explorer script](./install_explorer.sh), it's installing\updating to `$HOME/tools/java-extensions/mapstruct`
+
+## NeoVim integration by blink.cmp
+
+For IPC client for neovim is just part of my nvim configuration, and it's also on very early draft state. it's working, but requiring some work to stabilization, testing, improving and stabilization. In my plans in the future - it's to create separated nvim plugin `blink-cmp-java-mapstruct` with automatic installing\updating server.
+
+### Screenshots of real working in neovim:
+
+![@Mapping](./docs/images/20260115-015340.png)
+![@ValueMapping](./docs/images/20260115-015424.png)
 
 ## Usage
 
