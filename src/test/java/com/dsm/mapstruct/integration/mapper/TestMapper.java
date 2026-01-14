@@ -1,9 +1,14 @@
 package com.dsm.mapstruct.integration.mapper;
 
 import com.dsm.mapstruct.integration.dto.*;
-import com.dsm.mapstruct.testdata.TestClasses.*;
+import com.dsm.mapstruct.testdata.TestClasses.Company;
+import com.dsm.mapstruct.testdata.TestClasses.Order;
+import com.dsm.mapstruct.testdata.TestClasses.Person;
+import com.dsm.mapstruct.testdata.TestClasses.OrderStatus;
+import com.dsm.mapstruct.testdata.TestClasses.OrderState;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.ValueMapping;
 import org.mapstruct.factory.Mappers;
 
 /**
@@ -32,7 +37,8 @@ public interface TestMapper {
     @Mapping(target = "city", source = "address.city")
     @Mapping(target = "state", source = "address.state")
     @Mapping(target = "zipCode", source = "address.zipCode")
-    @Mapping(target = "countryName", source = "address.country.name")
+    // @Mapping(target = "countryName", source = "address.country.name")
+    @Mapping(target = "countryName", expression = "java(person.getAddress().getCountry().getName())")
     ComplexNestedDTO mapComplexNested(Person person);
 
     // Collection first accessor
@@ -113,4 +119,28 @@ public interface TestMapper {
     @Mapping(target = "firstOrderId", source = "orders.first.orderId")
     @Mapping(target = "firstProductName", source = "orders.first.items.first.product.name")
     CompletePersonDTO mapCompletePerson(Person person);
+
+    // Enum mapping for @ValueMapping completion testing
+    @ValueMapping(target = "PENDING", source = "NEW")
+    @ValueMapping(target = "CONFIRMED", source = "PROCESSING")
+    @ValueMapping(target = "SHIPPED", source = "IN_TRANSIT")
+    @ValueMapping(target = "DELIVERED", source = "COMPLETED")
+    @ValueMapping(target = "CANCELLED", source = "REJECTED")
+    OrderStatus fromStateTyped(OrderState state);
+
+
+    //
+    //
+    //     PENDING,
+    //     CONFIRMED,
+    //     SHIPPED,
+    //     DELIVERED,
+    //     CANCELLED
+    // }
+    //
+    // /**
+    //  * Order state enum for testing @ValueMapping.
+    //  */
+    // public enum OrderState {
+
 }

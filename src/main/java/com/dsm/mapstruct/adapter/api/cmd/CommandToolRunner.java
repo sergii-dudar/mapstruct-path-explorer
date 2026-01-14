@@ -23,7 +23,8 @@ public class CommandToolRunner {
         try {
             ExplorePathUseCase explorePathUseCase = new ExplorePathUseCase();
             Class<?> clazz = Class.forName(className);
-            ExplorePathUseCase.ExplorePathParams params = new ExplorePathUseCase.ExplorePathParams(clazz, pathExpression);
+            // Default to false for command-line usage (fields/getters, not enum constants)
+            ExplorePathUseCase.ExplorePathParams params = new ExplorePathUseCase.ExplorePathParams(clazz, pathExpression, false);
             System.out.println(explorePathUseCase.execute(params));
             return 0;
         } catch (ClassNotFoundException e) {

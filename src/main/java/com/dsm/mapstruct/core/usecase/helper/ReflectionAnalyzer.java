@@ -76,8 +76,14 @@ public class ReflectionAnalyzer {
         // Regular getter methods
         for (Method method : clazz.getMethods()) {
             if (isGetter(method)) {
-                String typeName = getTypeName(method.getReturnType());
                 String propertyName = getPropertyNameFromGetter(method.getName());
+
+                // Filter out Object.getClass() - not useful for MapStruct mappings
+                if (propertyName.equals("class")) {
+                    continue;
+                }
+
+                String typeName = getTypeName(method.getReturnType());
                 getters.add(new FieldInfo(propertyName, typeName, FieldInfo.FieldKind.GETTER));
             }
         }
@@ -86,12 +92,53 @@ public class ReflectionAnalyzer {
     }
 
     /**
+     * Gets enum constants for enum types.
+     * Used for @ValueMapping completion.
+     */
+    public List<FieldInfo> getEnumConstants(Class<?> clazz) {
+        if (!clazz.isEnum()) {
+            return List.of();
+        }
+
+        List<FieldInfo> constants = new ArrayList<>();
+        Object[] enumConstants = clazz.getEnumConstants();
+
+        if (enumConstants != null) {
+            for (Object constant : enumConstants) {
+                Enum<?> enumConstant = (Enum<?>) constant;
+                String name = enumConstant.name();
+                String typeName = clazz.getSimpleName();
+                // Use FIELD kind for enum constants (they are essentially static final fields)
+                constants.add(new FieldInfo(name, typeName, FieldInfo.FieldKind.FIELD));
+            }
+        }
+
+        return constants;
+    }
+
+    /**
      * Gets all fields and getters combined.
+     * If both a field and a getter exist for the same property name,
+     * only the getter is returned (MapStruct prefers getters).
      */
     public List<FieldInfo> getAllFieldsAndGetters(Class<?> clazz) {
+        List<FieldInfo> fields = getAllFields(clazz);
+        List<FieldInfo> getters = getAllGetters(clazz);
+
+        // Create a set of getter property names
+        var getterNames = getters.stream()
+                .map(FieldInfo::name)
+                .collect(java.util.stream.Collectors.toSet());
+
+        // Filter out fields that have a corresponding getter
+        var uniqueFields = fields.stream()
+                .filter(field -> !getterNames.contains(field.name()))
+                .toList();
+
+        // Combine unique fields with all getters
         return Stream.concat(
-            getAllFields(clazz).stream(),
-            getAllGetters(clazz).stream()
+            uniqueFields.stream(),
+            getters.stream()
         ).toList();
     }
 

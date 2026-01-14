@@ -26,12 +26,12 @@ public class ExplorePathUseCase implements UseCase<ExplorePathParams, String> {
     @SneakyThrows
     public String execute(ExplorePathParams input) {
         // Navigate and get completions
-        CompletionResult result = navigator.navigate(input.clazz, input.pathExpression);
+        CompletionResult result = navigator.navigate(input.clazz, input.pathExpression, input.isEnum);
 
         // Output as JSON
         return GSON.toJson(result);
     }
 
-    public record ExplorePathParams(Class<?> clazz, String pathExpression) {
+    public record ExplorePathParams(Class<?> clazz, String pathExpression, boolean isEnum) {
     }
 }

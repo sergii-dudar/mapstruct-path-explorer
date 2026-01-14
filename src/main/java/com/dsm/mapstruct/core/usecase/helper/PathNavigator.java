@@ -55,10 +55,31 @@ public class PathNavigator {
      * @return completion result with available fields/getters
      */
     public CompletionResult navigate(Class<?> rootClass, String pathExpression) {
+        return navigate(rootClass, pathExpression, false);
+    }
+
+    /**
+     * Navigates through the path and returns completion candidates.
+     *
+     * @param rootClass      the starting class
+     * @param pathExpression the MapStruct path expression
+     * @param isEnum         true if this is for @ValueMapping (enum constants)
+     * @return completion result with available fields/getters or enum constants
+     */
+    public CompletionResult navigate(Class<?> rootClass, String pathExpression, boolean isEnum) {
         try {
             List<PathSegment> segments = pathParser.parse(pathExpression);
 
             if (segments.isEmpty()) {
+                // For enum types (@ValueMapping), return enum constants
+                if (isEnum && rootClass.isEnum()) {
+                    List<FieldInfo> enumConstants = reflectionAnalyzer.getEnumConstants(rootClass);
+                    return CompletionResult.of(rootClass.getName(),
+                            rootClass.getSimpleName(),
+                            rootClass.getPackageName(),
+                            pathExpression, enumConstants);
+                }
+
                 // No path - check if root class is terminal type
                 if (isTerminalType(rootClass)) {
                     return CompletionResult.empty(rootClass.getName(),

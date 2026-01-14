@@ -21,7 +21,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateToRootClass() {
-        CompletionResult result = navigator.navigate(Person.class, "");
+        CompletionResult result = navigator.navigate(Person.class, "", false);
 
         assertThat(result.className()).isEqualTo(Person.class.getName());
         assertThat(result.completions()).isNotEmpty();
@@ -31,7 +31,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateToNestedField() {
-        CompletionResult result = navigator.navigate(Person.class, "address.");
+        CompletionResult result = navigator.navigate(Person.class, "address.", false);
 
         assertThat(result.completions()).isNotEmpty();
         assertThat(result.completions()).extracting("name")
@@ -40,7 +40,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateWithPartialPrefix() {
-        CompletionResult result = navigator.navigate(Person.class, "address.st");
+        CompletionResult result = navigator.navigate(Person.class, "address.st", false);
 
         assertThat(result.completions()).isNotEmpty();
         assertThat(result.completions()).extracting("name")
@@ -50,7 +50,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateTwoLevelsDeep() {
-        CompletionResult result = navigator.navigate(Person.class, "address.country.");
+        CompletionResult result = navigator.navigate(Person.class, "address.country.", false);
 
         assertThat(result.completions()).isNotEmpty();
         assertThat(result.completions()).extracting("name")
@@ -61,7 +61,7 @@ class PathNavigatorTest {
     void testNavigateWithGetter() {
         // Test navigating using actual getter method name
         // getCity() returns String, which is a terminal type
-        CompletionResult result = navigator.navigate(Person.class, "address.getCity().");
+        CompletionResult result = navigator.navigate(Person.class, "address.getCity().", false);
 
         // String is a terminal type - should return empty completions
         assertThat(result.completions()).isEmpty();
@@ -70,7 +70,7 @@ class PathNavigatorTest {
     @Test
     void testNavigateThroughCollection() {
         // MapStruct uses property syntax: orders.first (not orders.getFirst())
-        CompletionResult result = navigator.navigate(Person.class, "orders.first.");
+        CompletionResult result = navigator.navigate(Person.class, "orders.first.", false);
 
         // After accessing first element of List<Order>, we should get Order fields
         assertThat(result.completions()).isNotEmpty();
@@ -80,7 +80,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateThroughNestedCollection() {
-        CompletionResult result = navigator.navigate(Order.class, "items.first.product.");
+        CompletionResult result = navigator.navigate(Order.class, "items.first.product.", false);
 
         assertThat(result.completions()).isNotEmpty();
         assertThat(result.completions()).extracting("name")
@@ -89,7 +89,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateWithCollectionAndPrefix() {
-        CompletionResult result = navigator.navigate(Order.class, "items.first.product.n");
+        CompletionResult result = navigator.navigate(Order.class, "items.first.product.n", false);
 
         assertThat(result.completions()).isNotEmpty();
         assertThat(result.completions()).extracting("name")
@@ -100,7 +100,7 @@ class PathNavigatorTest {
     @Test
     void testNavigateThroughArray() {
         // Arrays also support .first syntax in MapStruct
-        CompletionResult result = navigator.navigate(Company.class, "employees.first.");
+        CompletionResult result = navigator.navigate(Company.class, "employees.first.", false);
 
         // After navigating through Person[] array
         assertThat(result.completions()).isNotEmpty();
@@ -110,14 +110,14 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateInvalidPath() {
-        CompletionResult result = navigator.navigate(Person.class, "nonExistentField.");
+        CompletionResult result = navigator.navigate(Person.class, "nonExistentField.", false);
 
         assertThat(result.completions()).isEmpty();
     }
 
     @Test
     void testNavigateWithMultipleCollections() {
-        CompletionResult result = navigator.navigate(Company.class, "departments.first.members.first.");
+        CompletionResult result = navigator.navigate(Company.class, "departments.first.members.first.", false);
 
         assertThat(result.completions()).isNotEmpty();
         assertThat(result.completions()).extracting("name")
@@ -126,7 +126,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateFieldNames() {
-        CompletionResult result = navigator.navigate(Person.class, "");
+        CompletionResult result = navigator.navigate(Person.class, "", false);
 
         // Both field and transformed getter should be present
         // Getter names are transformed: getFirstName() -> firstName
@@ -136,7 +136,7 @@ class PathNavigatorTest {
 
     @Test
     void testPrefixMatchingCaseInsensitive() {
-        CompletionResult result = navigator.navigate(Person.class, "First");
+        CompletionResult result = navigator.navigate(Person.class, "First", false);
 
         assertThat(result.completions()).extracting("name")
                 .contains("firstName")
@@ -147,7 +147,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateToRootRecord() {
-        CompletionResult result = navigator.navigate(PersonRecord.class, "");
+        CompletionResult result = navigator.navigate(PersonRecord.class, "", false);
 
         assertThat(result.className()).isEqualTo(PersonRecord.class.getName());
         assertThat(result.completions()).isNotEmpty();
@@ -157,7 +157,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateToNestedRecordField() {
-        CompletionResult result = navigator.navigate(AddressRecord.class, "country.");
+        CompletionResult result = navigator.navigate(AddressRecord.class, "country.", false);
 
         assertThat(result.completions()).isNotEmpty();
         assertThat(result.completions()).extracting("name")
@@ -166,7 +166,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateRecordWithPartialPrefix() {
-        CompletionResult result = navigator.navigate(PersonRecord.class, "first");
+        CompletionResult result = navigator.navigate(PersonRecord.class, "first", false);
 
         assertThat(result.completions()).isNotEmpty();
         assertThat(result.completions()).extracting("name")
@@ -176,7 +176,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateRecordTwoLevelsDeep() {
-        CompletionResult result = navigator.navigate(AddressRecord.class, "country.name");
+        CompletionResult result = navigator.navigate(AddressRecord.class, "country.name", false);
 
         assertThat(result.completions()).isNotEmpty();
         assertThat(result.completions()).extracting("name")
@@ -185,7 +185,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateThroughRecordCollection() {
-        CompletionResult result = navigator.navigate(OrderRecord.class, "items.first.");
+        CompletionResult result = navigator.navigate(OrderRecord.class, "items.first.", false);
 
         // After accessing first element of List<OrderItemRecord>, we should get OrderItemRecord fields
         assertThat(result.completions()).isNotEmpty();
@@ -195,7 +195,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateThroughNestedRecordCollection() {
-        CompletionResult result = navigator.navigate(OrderRecord.class, "items.first.product.");
+        CompletionResult result = navigator.navigate(OrderRecord.class, "items.first.product.", false);
 
         assertThat(result.completions()).isNotEmpty();
         assertThat(result.completions()).extracting("name")
@@ -204,7 +204,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateRecordWithCollectionAndPrefix() {
-        CompletionResult result = navigator.navigate(OrderRecord.class, "items.first.product.n");
+        CompletionResult result = navigator.navigate(OrderRecord.class, "items.first.product.n", false);
 
         assertThat(result.completions()).isNotEmpty();
         assertThat(result.completions()).extracting("name")
@@ -214,7 +214,7 @@ class PathNavigatorTest {
 
     @Test
     void testNavigateRecordInvalidPath() {
-        CompletionResult result = navigator.navigate(PersonRecord.class, "nonExistentField.");
+        CompletionResult result = navigator.navigate(PersonRecord.class, "nonExistentField.", false);
 
         assertThat(result.completions()).isEmpty();
     }
@@ -224,7 +224,7 @@ class PathNavigatorTest {
     @Test
     void testNavigateToStringField() {
         // Navigate to a String field - should return empty
-        CompletionResult result = navigator.navigate(Person.class, "firstName.");
+        CompletionResult result = navigator.navigate(Person.class, "firstName.", false);
 
         assertThat(result.completions()).isEmpty();
     }
@@ -232,7 +232,7 @@ class PathNavigatorTest {
     @Test
     void testNavigateToIntField() {
         // Navigate to an int field - should return empty
-        CompletionResult result = navigator.navigate(Person.class, "age.");
+        CompletionResult result = navigator.navigate(Person.class, "age.", false);
 
         assertThat(result.completions()).isEmpty();
     }
@@ -240,7 +240,7 @@ class PathNavigatorTest {
     @Test
     void testNavigateToNestedStringField() {
         // Navigate to nested String field - should return empty
-        CompletionResult result = navigator.navigate(Person.class, "address.city.");
+        CompletionResult result = navigator.navigate(Person.class, "address.city.", false);
 
         assertThat(result.completions()).isEmpty();
     }
@@ -248,7 +248,7 @@ class PathNavigatorTest {
     @Test
     void testRootClassIsString() {
         // Root class itself is String - should return empty
-        CompletionResult result = navigator.navigate(String.class, "");
+        CompletionResult result = navigator.navigate(String.class, "", false);
 
         assertThat(result.completions()).isEmpty();
     }
@@ -256,7 +256,7 @@ class PathNavigatorTest {
     @Test
     void testRootClassIsInteger() {
         // Root class itself is Integer - should return empty
-        CompletionResult result = navigator.navigate(Integer.class, "");
+        CompletionResult result = navigator.navigate(Integer.class, "", false);
 
         assertThat(result.completions()).isEmpty();
     }
@@ -264,7 +264,7 @@ class PathNavigatorTest {
     @Test
     void testRootClassIsPrimitive() {
         // Root class itself is primitive int - should return empty
-        CompletionResult result = navigator.navigate(int.class, "");
+        CompletionResult result = navigator.navigate(int.class, "", false);
 
         assertThat(result.completions()).isEmpty();
     }
@@ -272,7 +272,7 @@ class PathNavigatorTest {
     @Test
     void testNavigateToDoubleField() {
         // Navigate to double field in OrderItem - should return empty
-        CompletionResult result = navigator.navigate(Order.class, "items.first.price.");
+        CompletionResult result = navigator.navigate(Order.class, "items.first.price.", false);
 
         assertThat(result.completions()).isEmpty();
     }
@@ -280,7 +280,7 @@ class PathNavigatorTest {
     @Test
     void testNavigateRecordToStringField() {
         // Navigate to String field in record - should return empty
-        CompletionResult result = navigator.navigate(PersonRecord.class, "firstName.");
+        CompletionResult result = navigator.navigate(PersonRecord.class, "firstName.", false);
 
         assertThat(result.completions()).isEmpty();
     }
@@ -288,8 +288,42 @@ class PathNavigatorTest {
     @Test
     void testNavigateRecordToIntField() {
         // Navigate to int field in record - should return empty
-        CompletionResult result = navigator.navigate(PersonRecord.class, "age.");
+        CompletionResult result = navigator.navigate(PersonRecord.class, "age.", false);
 
         assertThat(result.completions()).isEmpty();
+    }
+
+    @Test
+    void testEnumConstants_OrderStatus() {
+        // Test @ValueMapping - should return enum constants
+        CompletionResult result = navigator.navigate(
+            com.dsm.mapstruct.testdata.TestClasses.OrderStatus.class,
+            "",
+            true  // isEnum = true for @ValueMapping
+        );
+
+        assertThat(result.className()).isEqualTo("com.dsm.mapstruct.testdata.TestClasses$OrderStatus");
+        assertThat(result.completions()).hasSize(5);
+        assertThat(result.completions()).extracting("name")
+                .containsExactlyInAnyOrder("PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED");
+        assertThat(result.completions()).extracting("kind")
+                .containsOnly(com.dsm.mapstruct.core.model.FieldInfo.FieldKind.FIELD);
+    }
+
+    @Test
+    void testEnumConstants_OrderState() {
+        // Test @ValueMapping with different enum - should return its constants
+        CompletionResult result = navigator.navigate(
+            com.dsm.mapstruct.testdata.TestClasses.OrderState.class,
+            "",
+            true  // isEnum = true for @ValueMapping
+        );
+
+        assertThat(result.className()).isEqualTo("com.dsm.mapstruct.testdata.TestClasses$OrderState");
+        assertThat(result.completions()).hasSize(5);
+        assertThat(result.completions()).extracting("name")
+                .containsExactlyInAnyOrder("NEW", "PROCESSING", "IN_TRANSIT", "COMPLETED", "REJECTED");
+        assertThat(result.completions()).extracting("kind")
+                .containsOnly(com.dsm.mapstruct.core.model.FieldInfo.FieldKind.FIELD);
     }
 }

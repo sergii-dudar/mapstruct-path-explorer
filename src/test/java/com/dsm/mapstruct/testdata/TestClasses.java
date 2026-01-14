@@ -253,4 +253,26 @@ public class TestClasses {
     @Builder
     public record ProductRecord(String name, String sku, double price) {
     }
+
+    /**
+     * Order status enum for testing @ValueMapping.
+     */
+    public enum OrderStatus {
+        PENDING,
+        CONFIRMED,
+        SHIPPED,
+        DELIVERED,
+        CANCELLED
+    }
+
+    /**
+     * Order state enum for testing @ValueMapping.
+     */
+    public enum OrderState {
+        NEW,
+        PROCESSING,
+        IN_TRANSIT,
+        COMPLETED,
+        REJECTED
+    }
 }

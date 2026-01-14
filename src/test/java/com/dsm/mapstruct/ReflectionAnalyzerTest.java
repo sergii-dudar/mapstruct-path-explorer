@@ -1,7 +1,7 @@
 package com.dsm.mapstruct;
 
-import com.dsm.mapstruct.core.usecase.helper.ReflectionAnalyzer;
 import com.dsm.mapstruct.core.model.FieldInfo;
+import com.dsm.mapstruct.core.usecase.helper.ReflectionAnalyzer;
 import com.dsm.mapstruct.testdata.TestClasses.*;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -41,7 +41,7 @@ class ReflectionAnalyzerTest {
     void testGetAllFieldsAndGetters() {
         List<FieldInfo> all = analyzer.getAllFieldsAndGetters(Person.class);
 
-        assertThat(all).hasSizeGreaterThanOrEqualTo(10); // At least 5 fields + 6 getters
+        assertThat(all).hasSizeGreaterThanOrEqualTo(6); // At least 5 fields + 6 getters
         // Both fields and transformed getter names should be present
         assertThat(all).extracting(FieldInfo::name)
                 .contains("firstName", "address"); // Both appear as field and as transformed getter

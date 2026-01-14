@@ -1,7 +1,10 @@
 package com.dsm.mapstruct.integration.mapper;
 
 import com.dsm.mapstruct.integration.dto.*;
-import com.dsm.mapstruct.testdata.TestClasses.*;
+import com.dsm.mapstruct.testdata.TestClasses.AddressRecord;
+import com.dsm.mapstruct.testdata.TestClasses.OrderRecord;
+import com.dsm.mapstruct.testdata.TestClasses.PersonRecord;
+import com.dsm.mapstruct.testdata.TestClasses.ProductRecord;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;

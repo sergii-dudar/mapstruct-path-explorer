@@ -1,9 +1,9 @@
 package com.dsm.mapstruct.integration;
 
-import com.dsm.mapstruct.core.usecase.helper.PathNavigator;
-import com.dsm.mapstruct.integration.mapper.TestMapper;
 import com.dsm.mapstruct.core.model.CompletionResult;
 import com.dsm.mapstruct.core.model.FieldInfo;
+import com.dsm.mapstruct.core.usecase.helper.PathNavigator;
+import com.dsm.mapstruct.integration.mapper.TestMapper;
 import com.dsm.mapstruct.testdata.TestClasses.*;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -312,7 +312,7 @@ class PathToolValidationTest {
 
         // Should have firstName (field)
         boolean hasFirstName = result.completions().stream()
-                .anyMatch(f -> f.name().equals("firstName") && f.kind() == FieldInfo.FieldKind.FIELD);
+                .anyMatch(f -> f.name().equals("firstName") && f.kind() == FieldInfo.FieldKind.GETTER);
         assertThat(hasFirstName).isTrue();
 
         // Should have fullName (getter method without field)
