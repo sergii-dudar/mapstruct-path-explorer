@@ -7,15 +7,28 @@ import com.dsm.mapstruct.core.util.CollectionTypeResolverUtil;
 import com.dsm.mapstruct.core.util.NameMatcherUtil;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import one.util.streamex.StreamEx;
 
 import java.lang.reflect.Field;
+import java.time.temporal.Temporal;
+import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Navigates through class structures following MapStruct path expressions.
  */
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PathNavigator {
+
+    private static Set<Class<?>> TERMNAL_REF_TYPES = Set.of(
+            CharSequence.class,
+            Number.class,
+            Boolean.class,
+            Character.class,
+            Date.class,
+            Temporal.class
+    );
 
     PathParser pathParser = new PathParser();
     ReflectionAnalyzer reflectionAnalyzer = new ReflectionAnalyzer();
@@ -30,8 +43,8 @@ public class PathNavigator {
             return true;
         }
 
-        // Wrapper types and String
-        return clazz == String.class || clazz == Integer.class || clazz == Long.class || clazz == Double.class || clazz == Float.class || clazz == Boolean.class || clazz == Byte.class || clazz == Short.class || clazz == Character.class;
+        return StreamEx.of(TERMNAL_REF_TYPES)
+                .anyMatch(terminalType -> terminalType.isAssignableFrom(clazz));
     }
 
     /**

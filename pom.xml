@@ -77,14 +77,12 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.20.0</version>
-            <scope>compile</scope>
         </dependency>
-        <!-- <dependency>
+        <dependency>
             <groupId>one.util</groupId>
             <artifactId>streamex</artifactId>
             <version>0.8.4</version>
-            <scope>compile</scope>
-        </dependency> -->
+        </dependency>
 
         <!-- Testing -->
         <dependency>
