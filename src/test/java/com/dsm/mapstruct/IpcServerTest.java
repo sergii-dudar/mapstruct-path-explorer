@@ -13,7 +13,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class IpcServerTest {
@@ -28,7 +28,7 @@ class IpcServerTest {
     @BeforeAll
     static void startServer() throws Exception {
         // Create socket path
-        socketPath = Path.of("/tmp/test-mapstruct-ipc-" + System.currentTimeMillis() + ".sock");
+        socketPath = Path.of("./test-mapstruct-ipc-" + System.currentTimeMillis() + ".sock");
         Files.deleteIfExists(socketPath);
 
         // Get JAR path and test classes
