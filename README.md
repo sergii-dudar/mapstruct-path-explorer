@@ -4,9 +4,12 @@ A command-line tool that provides MapStruct-style path completion using Java ref
 
 ## Why
 
-I love to work with java code as professional java software engineer in NeoVim. As also hard user of intellij in previous, I wanted to have similar mapping helping ability as provided by [Intellij MapStruct Pligin](https://plugins.jetbrains.com/plugin/10036-mapstruct-support).
-
+I love to work with java code as professional java software engineer in NeoVim. As also hard user of intellij in previous, I wanted to have similar mapping helping ability as provided by [Intellij MapStruct Pligin](https://plugins.jetbrains.com/plugin/10036-mapstruct-support)
 I have created this tool to use in pair with my neovim config with [blink.cmp](https://github.com/saghen/blink.cmp) completion source.
+
+# Note
+
+This project is under early development state, and I don't know when it will be finished for wide using.
 
 ## Features
 
@@ -339,7 +342,7 @@ This tool can be integrated with IDE plugins to provide MapStruct path completio
 ## Limitations
 
 - Only works with compiled classes on the classpath
-- Requires Java 25 for `getFirst()`/`getLast()` support on collections and record support
+- Requires Java 17 for `getFirst()`/`getLast()` support on collections and record support
 - Method parameters in paths are ignored (e.g., `get(0)` treats 0 as placeholder)
 - Raw collection types return `Object` as item type
 - Does not support complex generic type scenarios (e.g., nested generics)
@@ -395,5 +398,5 @@ java -version
 - [x] Implement core mapstruct path exploring functionality;
 - [x] Covering all by unit tests with using mapstruct real mappers, and make init stabilization work;
 - [x] Implement basic one shot runner from cmd (acceptable only for testing or not hard using (because of long class path usually, and it will have starting performance penalty because of that);
-- [ ] Implement lightweight IPC by using Uxin Domain Socket for communication by long running applications like NeoVim;
+- [x] Implement lightweight IPC by using Uxin Domain Socket for communication by long running applications like NeoVim;
 - [ ] Testing and stabilization work.

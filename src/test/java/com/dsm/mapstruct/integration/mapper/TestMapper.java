@@ -1,13 +1,10 @@
 package com.dsm.mapstruct.integration.mapper;
 
 import com.dsm.mapstruct.integration.dto.*;
-import com.dsm.mapstruct.testdata.TestClasses.Company;
-import com.dsm.mapstruct.testdata.TestClasses.Order;
-import com.dsm.mapstruct.testdata.TestClasses.Person;
-import com.dsm.mapstruct.testdata.TestClasses.OrderStatus;
-import com.dsm.mapstruct.testdata.TestClasses.OrderState;
+import com.dsm.mapstruct.testdata.TestClasses.*;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
 import org.mapstruct.ValueMapping;
 import org.mapstruct.factory.Mappers;
 
@@ -128,19 +125,18 @@ public interface TestMapper {
     @ValueMapping(target = "CANCELLED", source = "REJECTED")
     OrderStatus fromStateTyped(OrderState state);
 
+    @ValueMapping(target = "PENDING_TEST", source = "NEW")
+    @ValueMapping(target = "CONFIRMED_TEST", source = "PROCESSING")
+    @ValueMapping(target = "SHIPPED_TEST", source = "IN_TRANSIT")
+    @ValueMapping(target = "DELIVERED_TEST", source = "COMPLETED")
+    @ValueMapping(target = "CANCELLED_TEST", source = "REJECTED")
+    String toStringState(OrderState state);
 
-    //
-    //
-    //     PENDING,
-    //     CONFIRMED,
-    //     SHIPPED,
-    //     DELIVERED,
-    //     CANCELLED
-    // }
-    //
-    // /**
-    //  * Order state enum for testing @ValueMapping.
-    //  */
-    // public enum OrderState {
-
+    @ValueMapping(target = "PENDING", source = "NEW")
+    @ValueMapping(target = "CONFIRMED", source = "PROCESSING")
+    @ValueMapping(target = "SHIPPED", source = "IN_TRANSIT")
+    @ValueMapping(target = "DELIVERED", source = "COMPLETED")
+    @ValueMapping(target = "CANCELLED", source = "REJECTED")
+    @ValueMapping(target = MappingConstants.THROW_EXCEPTION, source = MappingConstants.ANY_UNMAPPED)
+    OrderStatus fromStatusString(String state);
 }

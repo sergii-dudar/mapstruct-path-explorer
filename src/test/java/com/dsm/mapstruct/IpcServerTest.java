@@ -28,7 +28,7 @@ class IpcServerTest {
     @BeforeAll
     static void startServer() throws Exception {
         // Create socket path
-        socketPath = Path.of("./test-mapstruct-ipc-" + System.currentTimeMillis() + ".sock");
+        socketPath = Path.of("/tmp/test-mapstruct-ipc-" + System.currentTimeMillis() + ".sock");
         Files.deleteIfExists(socketPath);
 
         // Get JAR path and test classes
