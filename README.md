@@ -44,7 +44,7 @@ This will create two JAR files in the `target/` directory:
 
 ## NeoVim integration by blink.cmp
 
-For IPC client for neovim is just part of my nvim configuration, and it's also on very early draft state. it's working, but requiring some work to stabilization, testing, improving and stabilization. In my plans in the future - it's to create separated nvim plugin `blink-cmp-java-mapstruct` with automatic installing\updating server.
+Lua IPC client for neovim, right now it's just part of my nvim configuration, and it's also on very early draft state. it's working, but requiring some work testing, improving and stabilization. In my plans in the future - it's to create separated nvim plugin `blink-cmp-java-mapstruct` with automatic installing\updating server.
 
 ### Screenshots of real working in neovim:
 
