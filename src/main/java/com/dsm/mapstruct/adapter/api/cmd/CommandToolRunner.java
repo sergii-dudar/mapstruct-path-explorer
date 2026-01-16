@@ -1,6 +1,9 @@
 package com.dsm.mapstruct.adapter.api.cmd;
 
+import com.dsm.mapstruct.core.model.SourceParameter;
 import com.dsm.mapstruct.core.usecase.ExplorePathUseCase;
+
+import java.util.List;
 
 public class CommandToolRunner {
 
@@ -23,8 +26,14 @@ public class CommandToolRunner {
         try {
             ExplorePathUseCase explorePathUseCase = new ExplorePathUseCase();
             Class<?> clazz = Class.forName(className);
+
+            // For command-line usage, wrap single class in a SourceParameter with default name "source"
+            List<SourceParameter> sources = List.of(
+                new SourceParameter("source", clazz.getName())
+            );
+
             // Default to false for command-line usage (fields/getters, not enum constants)
-            ExplorePathUseCase.ExplorePathParams params = new ExplorePathUseCase.ExplorePathParams(clazz, pathExpression, false);
+            ExplorePathUseCase.ExplorePathParams params = new ExplorePathUseCase.ExplorePathParams(sources, pathExpression, false);
             System.out.println(explorePathUseCase.execute(params));
             return 0;
         } catch (ClassNotFoundException e) {

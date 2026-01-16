@@ -2,10 +2,7 @@ package com.dsm.mapstruct.integration.mapper;
 
 import com.dsm.mapstruct.integration.dto.*;
 import com.dsm.mapstruct.testdata.TestClasses.*;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
-import org.mapstruct.ValueMapping;
+import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
 /**
@@ -25,6 +22,7 @@ public interface TestMapper {
     // Nested field mapping
     @Mapping(target = "cityName", source = "address.city")
     NestedFieldDTO mapNestedField(Person person);
+
 
     // Deeply nested field mapping
     @Mapping(target = "countryCode", source = "address.country.code")
@@ -108,7 +106,7 @@ public interface TestMapper {
     @Mapping(target = "fullName", source = "fullName")
     @Mapping(target = "age", source = "age")
     @Mapping(target = "street", source = "address.street")
-    @Mapping(target = "city", source = "address.city")
+    @Mapping(target = "city", source = "person.address.city")
     @Mapping(target = "state", source = "address.state")
     @Mapping(target = "zipCode", source = "address.zipCode")
     @Mapping(target = "country", source = "address.country.name")
@@ -116,6 +114,57 @@ public interface TestMapper {
     @Mapping(target = "firstOrderId", source = "orders.first.orderId")
     @Mapping(target = "firstProductName", source = "orders.first.items.first.product.name")
     CompletePersonDTO mapCompletePerson(Person person);
+
+    @Mapping(target = "address.city", source = "address.city")
+    Person toPerson(Person person);
+
+    @Mapping(target = "fullName", source = "person.fullName")
+    @Mapping(target = "age", source = "person.age")
+    @Mapping(target = "street", source = "person.address.street")
+    @Mapping(target = "city", source = "person.address.city")
+    @Mapping(target = "state", source = "person.address.state")
+    @Mapping(target = "zipCode", source = "person.address.zipCode")
+    @Mapping(target = "country", source = "person.address.country.name")
+    @Mapping(target = "countryCode", source = "person.address.country.code")
+    @Mapping(target = "firstOrderId", source = "person.orders.first.orderId")
+    @Mapping(target = "firstProductName", source = "person.orders.first.items.first.product.name")
+    CompletePersonDTO mapCompletePerson2(Person person);
+
+    @Mapping(target = "fullName", source = "fullName")
+    @Mapping(target = "age", source = "age")
+    @Mapping(target = "street", source = "address.street")
+    @Mapping(target = "city", source = "address.city")
+    @Mapping(target = "state", source = "address.state")
+    @Mapping(target = "zipCode", source = "address.zipCode")
+    @Mapping(target = "country", source = "address.country.name")
+    @Mapping(target = "countryCode", source = "address.country.code")
+    @Mapping(target = "firstOrderId", source = "orders.first.orderId")
+    @Mapping(target = "firstProductName", source = "orders.first.items.first.product.name")
+    void mapCompletePerson3(@MappingTarget CompletePersonDTO.CompletePersonDTOBuilder dto, Person person);
+
+    @Mapping(target = "fullName", source = "customFullName")
+    @Mapping(target = "age", source = "person.age")
+    @Mapping(target = "street", source = "person.address.street")
+    @Mapping(target = "city", source = "order.customer.address.city")
+    @Mapping(target = "state", source = "person.address.state")
+    @Mapping(target = "zipCode", source = "person.address.zipCode")
+    @Mapping(target = "country", source = "person.address.country.name")
+    @Mapping(target = "countryCode", source = "person.address.country.code")
+    @Mapping(target = "firstOrderId", source = "person.orders.first.orderId")
+    @Mapping(target = "firstProductName", source = "person.orders.first.items.first.product.name")
+    CompletePersonDTO mapCompletePerson(Person person, Order order, String customFullName);
+
+    @Mapping(target = "fullName", source = "customFullName")
+    @Mapping(target = "age", source = "person.age")
+    @Mapping(target = "street", source = "person.address.street")
+    @Mapping(target = "city", source = "order.customer.address.city")
+    @Mapping(target = "state", source = "person.address.state")
+    @Mapping(target = "zipCode", source = "person.address.zipCode")
+    @Mapping(target = "country", source = "person.address.country.name")
+    @Mapping(target = "countryCode", source = "person.address.country.code")
+    @Mapping(target = "firstOrderId", source = "person.orders.first.orderId")
+    @Mapping(target = "firstProductName", source = "person.orders.first.items.first.product.name")
+    CompletePersonDTO.CompletePersonDTOBuilder mapCompletePerson(@MappingTarget CompletePersonDTO.CompletePersonDTOBuilder dto, Person person, Order order, String customFullName);
 
     // Enum mapping for @ValueMapping completion testing
     @ValueMapping(target = "PENDING", source = "NEW")

@@ -2,15 +2,19 @@ package com.dsm.mapstruct.core.usecase.helper;
 
 import com.dsm.mapstruct.core.model.CompletionResult;
 import com.dsm.mapstruct.core.model.FieldInfo;
+import com.dsm.mapstruct.core.model.FieldInfo.FieldKind;
 import com.dsm.mapstruct.core.model.PathSegment;
+import com.dsm.mapstruct.core.model.SourceParameter;
 import com.dsm.mapstruct.core.util.CollectionTypeResolverUtil;
 import com.dsm.mapstruct.core.util.NameMatcherUtil;
 import lombok.AccessLevel;
+import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
 import one.util.streamex.StreamEx;
 
 import java.lang.reflect.Field;
 import java.time.temporal.Temporal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -45,6 +49,70 @@ public class PathNavigator {
 
         return StreamEx.of(TERMNAL_REF_TYPES)
                 .anyMatch(terminalType -> terminalType.isAssignableFrom(clazz));
+    }
+
+    /**
+     * Navigates from multiple source parameters (multi-param mapper support).
+     * Handles parameter name completion and navigation from specific parameters.
+     *
+     * @param sources        list of source parameters
+     * @param pathExpression the MapStruct path expression
+     * @param isEnum         true if this is for @ValueMapping (enum constants)
+     * @return completion result with parameter names or field completions
+     */
+    @SneakyThrows
+    public CompletionResult navigateFromSources(List<SourceParameter> sources, String pathExpression, boolean isEnum) {
+        if (sources == null || sources.isEmpty()) {
+            throw new IllegalArgumentException("sources list cannot be null or empty");
+        }
+
+        // SPECIAL CASE: Single parameter + empty path -> navigate directly into that type
+        // This handles:
+        // 1. Target attributes (always single-parameter, should show fields not parameter name)
+        // 2. Single-parameter source mappers (backward compatibility)
+        if ((pathExpression == null || pathExpression.isBlank()) && sources.size() == 1) {
+            SourceParameter singleParam = sources.get(0);
+            Class<?> paramType = Class.forName(singleParam.type());
+            return navigate(paramType, "", isEnum);
+        }
+
+        // Empty path with multiple parameters -> return parameter names as completions
+        if (pathExpression == null || pathExpression.isBlank()) {
+            return buildParameterCompletions(sources, "");
+        }
+
+        // Check if path starts with a parameter name
+        String firstSegment = extractFirstSegment(pathExpression);
+
+        // Try to find matching parameter
+        SourceParameter matchedParam = findParameterByName(sources, firstSegment);
+
+        if (matchedParam != null) {
+            // Path starts with parameter name - navigate from that parameter's type
+            String remainingPath = removeFirstSegment(pathExpression);
+            Class<?> paramType = Class.forName(matchedParam.type());
+            return navigate(paramType, remainingPath, isEnum);
+        }
+
+        // Check if it's a partial parameter name (prefix matching)
+        List<SourceParameter> matchingParams = filterParametersByPrefix(sources, firstSegment);
+        if (!matchingParams.isEmpty() && !firstSegment.contains(".")) {
+            // Return matching parameter names
+            return buildParameterCompletions(matchingParams, firstSegment);
+        }
+
+        // BACKWARD COMPATIBILITY: For single-parameter mappers, if path doesn't match
+        // the parameter name, navigate directly from that parameter's type.
+        // This handles cases like: CompletePersonDTO map(Person person)
+        // where user types "address." but we send sources=[{name:"param0", type:"Person"}]
+        if (sources.size() == 1) {
+            SourceParameter singleParam = sources.get(0);
+            Class<?> paramType = Class.forName(singleParam.type());
+            return navigate(paramType, pathExpression, isEnum);
+        }
+
+        // Path doesn't match any parameter - return empty
+        return CompletionResult.empty("", "", "", pathExpression);
     }
 
     /**
@@ -290,5 +358,105 @@ public class PathNavigator {
         }
 
         return null;
+    }
+
+    // ========== Multi-Parameter Support Helper Methods ==========
+
+    /**
+     * Builds completion result containing parameter names.
+     */
+    private CompletionResult buildParameterCompletions(List<SourceParameter> parameters, String pathExpression) {
+        List<FieldInfo> parameterFields = new ArrayList<>();
+
+        for (SourceParameter param : parameters) {
+            parameterFields.add(new FieldInfo(
+                param.name(),
+                param.type(),
+                FieldKind.PARAMETER
+            ));
+        }
+
+        // Use first parameter's type info for metadata (or empty if no params)
+        if (!parameters.isEmpty()) {
+            SourceParameter first = parameters.get(0);
+            try {
+                Class<?> firstClass = Class.forName(first.type());
+                return CompletionResult.of(
+                    firstClass.getName(),
+                    firstClass.getSimpleName(),
+                    firstClass.getPackageName(),
+                    pathExpression,
+                    parameterFields
+                );
+            } catch (ClassNotFoundException e) {
+                // Fallback to simple class info
+            }
+        }
+
+        return CompletionResult.of("", "", "", pathExpression, parameterFields);
+    }
+
+    /**
+     * Extracts the first segment from a path expression.
+     * Examples:
+     * - "person" -> "person"
+     * - "person.address" -> "person"
+     * - "person.address.street" -> "person"
+     */
+    private String extractFirstSegment(String pathExpression) {
+        if (pathExpression == null || pathExpression.isBlank()) {
+            return "";
+        }
+
+        int dotIndex = pathExpression.indexOf('.');
+        if (dotIndex == -1) {
+            return pathExpression.trim();
+        }
+
+        return pathExpression.substring(0, dotIndex).trim();
+    }
+
+    /**
+     * Removes the first segment from a path expression.
+     * Examples:
+     * - "person.address" -> "address"
+     * - "person.address.street" -> "address.street"
+     * - "person" -> ""
+     */
+    private String removeFirstSegment(String pathExpression) {
+        if (pathExpression == null || pathExpression.isBlank()) {
+            return "";
+        }
+
+        int dotIndex = pathExpression.indexOf('.');
+        if (dotIndex == -1) {
+            return "";
+        }
+
+        return pathExpression.substring(dotIndex + 1);
+    }
+
+    /**
+     * Finds a parameter by exact name match.
+     */
+    private SourceParameter findParameterByName(List<SourceParameter> sources, String name) {
+        return sources.stream()
+            .filter(p -> p.name().equals(name))
+            .findFirst()
+            .orElse(null);
+    }
+
+    /**
+     * Filters parameters by prefix (case-insensitive).
+     */
+    private List<SourceParameter> filterParametersByPrefix(List<SourceParameter> sources, String prefix) {
+        if (prefix == null || prefix.isBlank()) {
+            return sources;
+        }
+
+        String lowerPrefix = prefix.toLowerCase();
+        return sources.stream()
+            .filter(p -> p.name().toLowerCase().startsWith(lowerPrefix))
+            .toList();
     }
 }

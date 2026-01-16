@@ -11,7 +11,8 @@ public record FieldInfo(
 
     public enum FieldKind {
         FIELD,
-        GETTER
+        GETTER,
+        PARAMETER  // Method parameter (for multi-source mappers)
     }
 
     @Override

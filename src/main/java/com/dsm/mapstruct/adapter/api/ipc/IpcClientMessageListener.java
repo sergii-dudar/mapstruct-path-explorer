@@ -1,15 +1,20 @@
 package com.dsm.mapstruct.adapter.api.ipc;
 
 import com.dsm.mapstruct.core.model.CompletionResult;
+import com.dsm.mapstruct.core.model.SourceParameter;
 import com.dsm.mapstruct.core.usecase.ExplorePathUseCase;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.nio.channels.Channels;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class IpcClientMessageListener {
@@ -98,30 +103,32 @@ public class IpcClientMessageListener {
                                     return;
 
                                 case "explore_path":
-                                    String className = params.has("className") ? params.get("className").getAsString() : null;
                                     String pathExpression = params.has("pathExpression") ? params.get("pathExpression").getAsString() : null;
                                     boolean isEnum = params.has("isEnum") && params.get("isEnum").getAsBoolean();
 
-                                    if (className == null || pathExpression == null) {
-                                        response.addProperty("error", "Missing required params: className, pathExpression");
+                                    // Parse sources array (new protocol)
+                                    List<SourceParameter> sources = new ArrayList<>();
+                                    if (params.has("sources") && params.get("sources").isJsonArray()) {
+                                        Type sourceListType = new TypeToken<List<SourceParameter>>(){}.getType();
+                                        sources = gson.fromJson(params.get("sources"), sourceListType);
+                                    }
+
+                                    if (sources.isEmpty() || pathExpression == null) {
+                                        response.addProperty("error", "Missing required params: sources (array), pathExpression");
                                     } else {
                                         try {
-                                            // Load the class
-                                            Class<?> clazz = Class.forName(className);
-
-                                            // Execute path exploration
+                                            // Execute path exploration with multi-parameter support
                                             ExplorePathUseCase.ExplorePathParams exploreParams =
-                                                new ExplorePathUseCase.ExplorePathParams(clazz, pathExpression, isEnum);
+                                                new ExplorePathUseCase.ExplorePathParams(sources, pathExpression, isEnum);
                                             String resultJson = explorePathUseCase.execute(exploreParams);
 
                                             // Parse the result and return it
                                             JsonObject resultObj = JsonParser.parseString(resultJson).getAsJsonObject();
                                             response.add("result", resultObj);
 
-                                        } catch (ClassNotFoundException e) {
-                                            response.addProperty("error", "Class not found: " + className);
                                         } catch (Exception e) {
                                             response.addProperty("error", "Error exploring path: " + e.getMessage());
+                                            e.printStackTrace();
                                         }
                                     }
                                     break;
