@@ -12,6 +12,7 @@ public record FieldInfo(
     public enum FieldKind {
         FIELD,
         GETTER,
+        SETTER,    // Setter method (for target mappings and builder patterns)
         PARAMETER  // Method parameter (for multi-source mappers)
     }
 

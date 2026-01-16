@@ -139,7 +139,7 @@ public class ReflectionAnalyzer {
                 Class<?> paramType = method.getParameterTypes()[0];
                 String typeName = getTypeName(paramType);
 
-                setters.add(new FieldInfo(propertyName, typeName, FieldInfo.FieldKind.GETTER));
+                setters.add(new FieldInfo(propertyName, typeName, FieldInfo.FieldKind.SETTER));
             }
         }
 
