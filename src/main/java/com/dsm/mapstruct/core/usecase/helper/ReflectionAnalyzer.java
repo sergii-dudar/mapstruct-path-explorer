@@ -117,28 +117,111 @@ public class ReflectionAnalyzer {
     }
 
     /**
+     * Gets all setter methods from a class.
+     * A setter is a public method that:
+     * - Takes exactly 1 parameter
+     * - Is not static
+     * - Returns void OR returns the same class type (for fluent/builder pattern)
+     *
+     * Used for target completion on builder classes and POJOs with setters.
+     * Examples:
+     * - setFullName(String) → fullName (JavaBean style)
+     * - fullName(String) → fullName (Builder/fluent style)
+     */
+    public List<FieldInfo> getAllSetters(Class<?> clazz) {
+        List<FieldInfo> setters = new ArrayList<>();
+
+        for (Method method : clazz.getMethods()) {
+            if (isSetter(method, clazz)) {
+                String propertyName = getPropertyNameFromSetter(method.getName());
+
+                // Get the parameter type (first and only parameter)
+                Class<?> paramType = method.getParameterTypes()[0];
+                String typeName = getTypeName(paramType);
+
+                setters.add(new FieldInfo(propertyName, typeName, FieldInfo.FieldKind.GETTER));
+            }
+        }
+
+        return setters;
+    }
+
+    /**
+     * Checks if a method is a setter method.
+     */
+    private boolean isSetter(Method method, Class<?> clazz) {
+        // Must be public, non-static
+        if (!Modifier.isPublic(method.getModifiers()) || Modifier.isStatic(method.getModifiers())) {
+            return false;
+        }
+
+        // Must take exactly 1 parameter
+        if (method.getParameterCount() != 1) {
+            return false;
+        }
+
+        // Return type must be void (JavaBean) or the class itself (fluent/builder)
+        Class<?> returnType = method.getReturnType();
+        if (returnType != void.class && returnType != clazz) {
+            return false;
+        }
+
+        // Exclude common Object methods and utility methods
+        String methodName = method.getName();
+        if (methodName.equals("equals") || methodName.equals("wait") ||
+            methodName.equals("notify") || methodName.equals("notifyAll") ||
+            methodName.equals("toString")) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Converts a setter method name to MapStruct property name format.
+     * Examples:
+     * - setFullName → fullName (JavaBean style)
+     * - fullName → fullName (Builder/fluent style)
+     */
+    private String getPropertyNameFromSetter(String methodName) {
+        if (methodName.startsWith("set") && methodName.length() > 3) {
+            String propertyName = methodName.substring(3);
+            return decapitalize(propertyName);
+        }
+        return methodName;
+    }
+
+    /**
      * Gets all fields and getters combined.
      * If both a field and a getter exist for the same property name,
      * only the getter is returned (MapStruct prefers getters).
+     *
+     * If no getters are found, also includes setters (for builder classes and target mappings).
      */
     public List<FieldInfo> getAllFieldsAndGetters(Class<?> clazz) {
         List<FieldInfo> fields = getAllFields(clazz);
         List<FieldInfo> getters = getAllGetters(clazz);
+        List<FieldInfo> setters = getAllSetters(clazz);
 
         // Create a set of getter property names
         var getterNames = getters.stream()
                 .map(FieldInfo::name)
                 .collect(java.util.stream.Collectors.toSet());
 
-        // Filter out fields that have a corresponding getter
+        // Create a set of setter property names
+        var setterNames = setters.stream()
+                .map(FieldInfo::name)
+                .collect(java.util.stream.Collectors.toSet());
+
+        // Filter out fields that have a corresponding getter or setter
         var uniqueFields = fields.stream()
-                .filter(field -> !getterNames.contains(field.name()))
+                .filter(field -> !getterNames.contains(field.name()) && !setterNames.contains(field.name()))
                 .toList();
 
-        // Combine unique fields with all getters
+        // Combine: unique fields + all getters + all setters
         return Stream.concat(
-            uniqueFields.stream(),
-            getters.stream()
+            Stream.concat(uniqueFields.stream(), getters.stream()),
+            setters.stream()
         ).toList();
     }
 
