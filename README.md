@@ -17,10 +17,15 @@ This project is under early development state, and I don't know when it will be 
 - Handle collections and their item accessors (e.g., `items.first`, `list.last`)
 - Support for arrays and generic types
 - Full support for Java records (accessor methods like `name()`, `age()`)
+- **Setter detection** for JavaBean-style setters and builder patterns
+- **@MappingTarget parameter detection** for void return type mappers
+- **Multi-parameter mapper support** with parameter name completion
+- **Smart field kind detection** - GETTER for source, SETTER for target
 - Prefix matching for autocomplete suggestions
 - JSON output format for easy integration
 - Works with any Java class on the classpath
-- Be very lightweight
+- **IPC support via Unix Domain Sockets for persistent sessions**
+- **Be very lightweight**
 
 ## Requirements
 
@@ -53,216 +58,7 @@ Lua IPC client for neovim, right now it's just part of my nvim configuration, an
 
 ## Usage
 
-### Basic Syntax
-
-```bash
-java -jar target/mapstruct-path-explorer.jar \
-  "<fully.qualified.ClassName>" \
-  "<path.expression>"
-```
-
-### With Custom Classpath
-
-If you need to analyze classes from your own project:
-
-```bash
-java -cp "target/mapstruct-path-explorer.jar:/path/to/your/classes" \
-  com.dsm.mapstruct.MapStructPathTool \
-  "com.example.User" \
-  "address.street"
-```
-
-## Examples
-
-### 1. Show All Fields in a Class
-
-```bash
-java -jar mapstruct-path-explorer.jar "com.example.User" ""
-```
-
-**Output:**
-
-```json
-{
-  "className": "com.example.User",
-  "simpleName": "User",
-  "packageName": "com.example",
-  "path": "",
-  "completions": [
-    { "name": "address", "type": "Address", "kind": "FIELD" },
-    { "name": "address", "type": "Address", "kind": "GETTER" },
-    { "name": "age", "type": "int", "kind": "FIELD" },
-    { "name": "age", "type": "int", "kind": "GETTER" },
-    { "name": "email", "type": "String", "kind": "FIELD" },
-    { "name": "email", "type": "String", "kind": "GETTER" },
-    { "name": "firstName", "type": "String", "kind": "FIELD" },
-    { "name": "firstName", "type": "String", "kind": "GETTER" }
-  ]
-}
-```
-
-**Note**: Getter names are transformed to MapStruct property format:
-
-- `getFirstName()` → `firstName`
-- `isActive()` → `active`
-
-### 2. Navigate to Nested Field
-
-```bash
-java -jar mapstruct-path-explorer.jar "com.example.User" "address."
-```
-
-**Output:**
-
-```json
-{
-  "className": "com.example.Address",
-  "simpleName": "Address",
-  "packageName": "com.example",
-  "path": "address.",
-  "completions": [
-    { "name": "city", "type": "String", "kind": "FIELD" },
-    { "name": "country", "type": "Country", "kind": "FIELD" },
-    { "name": "state", "type": "String", "kind": "FIELD" },
-    { "name": "street", "type": "String", "kind": "FIELD" },
-    { "name": "zipCode", "type": "String", "kind": "FIELD" }
-  ]
-}
-```
-
-### 3. Filter by Prefix
-
-```bash
-java -jar mapstruct-path-explorer.jar "com.example.User" "address.st"
-```
-
-**Output:**
-
-```json
-{
-  "className": "com.example.Address",
-  "simpleName": "Address",
-  "packageName": "com.example",
-  "path": "address.st",
-  "completions": [
-    { "name": "state", "type": "String", "kind": "FIELD" },
-    { "name": "street", "type": "String", "kind": "FIELD" }
-  ]
-}
-```
-
-### 4. Navigate Through Collections
-
-MapStruct uses property-style syntax for collections:
-
-```bash
-java -jar mapstruct-path-explorer.jar "com.example.Order" "items.first."
-```
-
-**Output:**
-
-```json
-{
-  "className": "com.example.OrderItem",
-  "simpleName": "OrderItem",
-  "packageName": "com.example",
-  "path": "items.first.",
-  "completions": [
-    { "name": "price", "type": "double", "kind": "FIELD" },
-    { "name": "product", "type": "Product", "kind": "FIELD" },
-    { "name": "quantity", "type": "int", "kind": "FIELD" }
-  ]
-}
-```
-
-### 5. Deep Nested Navigation
-
-```bash
-java -jar mapstruct-path-explorer.jar "com.example.Order" "items.first.product.name"
-```
-
-**Output:**
-
-```json
-{
-  "className": "com.example.Product",
-  "simpleName": "Product",
-  "packageName": "com.example",
-  "path": "items.first.product.name",
-  "completions": [{ "name": "name", "type": "String", "kind": "FIELD" }]
-}
-```
-
-### 6. Navigate Through Java Records
-
-Java records are fully supported. Record component accessor methods (like `name()`, `age()`) are treated as getters:
-
-```bash
-java -jar mapstruct-path-explorer.jar "com.example.PersonRecord" ""
-```
-
-**Output:**
-
-```json
-{
-  "className": "com.example.PersonRecord",
-  "simpleName": "PersonRecord",
-  "packageName": "com.example",
-  "path": "",
-  "completions": [
-    { "name": "firstName", "type": "String", "kind": "GETTER" },
-    { "name": "lastName", "type": "String", "kind": "GETTER" },
-    { "name": "age", "type": "int", "kind": "GETTER" }
-  ]
-}
-```
-
-**Nested Records:**
-
-```bash
-java -jar mapstruct-path-explorer.jar "com.example.AddressRecord" "country."
-```
-
-**Output:**
-
-```json
-{
-  "className": "com.example.CountryRecord",
-  "simpleName": "CountryRecord",
-  "packageName": "com.example",
-  "path": "country.",
-  "completions": [
-    { "name": "name", "type": "String", "kind": "GETTER" },
-    { "name": "code", "type": "String", "kind": "GETTER" }
-  ]
-}
-```
-
-### 7. Terminal Types (Primitives and String)
-
-When navigating to primitive types, wrapper types, or String, the tool returns empty completions since these types don't have meaningful MapStruct properties:
-
-```bash
-java -jar mapstruct-path-explorer.jar "com.example.Person" "firstName."
-```
-
-**Output:**
-
-```json
-{
-  "className": "java.lang.String",
-  "simpleName": "String",
-  "packageName": "java.lang",
-  "path": "firstName.",
-  "completions": []
-}
-```
-
-This applies to all terminal types:
-
-- Primitives: `int`, `long`, `double`, `float`, `boolean`, `byte`, `short`, `char`
-- Wrapper types: `Integer`, `Long`, `Double`, `Float`, `Boolean`, `Byte`, `Short`, `Character`
-- String: `java.lang.String`
+This tool is primarily designed for IPC integration with editors like NeoVim. See the **IPC Protocol** section below for the current API format.
 
 ## Supported Path Expressions
 
@@ -303,8 +99,179 @@ SequencedCollection<> implementations (like Lists) supporting `first` and `last`
 2. **Reflection Analysis**: Uses Java reflection to analyze class structure
 3. **Type Resolution**: Resolves generic types in collections (e.g., `List<Person>` → `Person`)
 4. **Navigation**: Follows the path through the object graph
-5. **Completion**: Returns available fields/getters at the final location
+5. **Completion**: Returns available fields/getters/setters at the final location
 6. **Filtering**: Applies prefix matching if a partial segment is provided
+
+## IPC Protocol (Unix Domain Socket)
+
+For persistent sessions (like Neovim integration), the tool supports IPC communication via Unix Domain Sockets.
+
+### Starting the IPC Server
+
+```bash
+java -jar mapstruct-path-explorer.jar /tmp/mapstruct-ipc.sock
+```
+
+### Protocol Format
+
+The protocol uses JSON messages with the following structure:
+
+#### Request Format
+
+```json
+{
+  "id": "unique-request-id",
+  "method": "explore_path",
+  "params": {
+    "sources": [
+      { "name": "person", "type": "com.example.Person" },
+      { "name": "order", "type": "com.example.Order" }
+    ],
+    "pathExpression": "person.address.",
+    "isEnum": false
+  }
+}
+```
+
+**Parameters:**
+
+- `sources` (array, required): List of source parameters
+  - `name` (string): Parameter name (use `"$target"` for target attribute completion)
+  - `type` (string): Fully qualified class name
+- `pathExpression` (string, required): MapStruct path expression
+- `isEnum` (boolean, required): `true` for @ValueMapping enum constants, `false` otherwise
+
+#### Response Format
+
+```json
+{
+  "id": "unique-request-id",
+  "result": {
+    "className": "com.example.Address",
+    "simpleName": "Address",
+    "packageName": "com.example",
+    "path": "person.address.",
+    "completions": [
+      { "name": "street", "type": "String", "kind": "GETTER" },
+      { "name": "city", "type": "String", "kind": "SETTER" }
+    ]
+  }
+}
+```
+
+**Field Kinds:**
+
+- `FIELD`: Public field access
+- `GETTER`: Getter method (for source mappings)
+- `SETTER`: Setter method or builder method (for target mappings)
+- `PARAMETER`: Method parameter (for multi-source mappers)
+
+#### Error Response
+
+```json
+{
+  "id": "unique-request-id",
+  "error": "Error message"
+}
+```
+
+### Multi-Parameter Mapper Support
+
+For multi-parameter mappers like:
+
+```java
+CompletePersonDTO map(Person person, Order order, String customName);
+```
+
+**Empty Path** - Returns parameter names:
+
+```json
+{
+  "sources": [
+    { "name": "person", "type": "com.example.Person" },
+    { "name": "order", "type": "com.example.Order" },
+    { "name": "customName", "type": "java.lang.String" }
+  ],
+  "pathExpression": "",
+  "isEnum": false
+}
+```
+
+Response:
+
+```json
+{
+  "completions": [
+    { "name": "person", "type": "com.example.Person", "kind": "PARAMETER" },
+    { "name": "order", "type": "com.example.Order", "kind": "PARAMETER" },
+    { "name": "customName", "type": "java.lang.String", "kind": "PARAMETER" }
+  ]
+}
+```
+
+**With Path** - Navigate from specific parameter:
+
+```json
+{
+  "sources": [...],
+  "pathExpression": "person.address.street",
+  "isEnum": false
+}
+```
+
+### Target Attribute Completion
+
+For target attribute mappings, use the synthetic `"$target"` parameter name:
+
+```json
+{
+  "sources": [{ "name": "$target", "type": "com.example.PersonDTO" }],
+  "pathExpression": "",
+  "isEnum": false
+}
+```
+
+This will automatically:
+
+1. Navigate directly into the target class fields
+2. Convert all GETTER/FIELD kinds to SETTER kind
+3. Include setter methods for mutable classes and builder patterns
+
+### @MappingTarget Support
+
+For methods with `@MappingTarget` and `void` return type:
+
+```java
+void mapPerson(@MappingTarget PersonDTO dto, Person person);
+```
+
+The tool automatically:
+
+1. Detects the `@MappingTarget` parameter from bytecode
+2. Uses the `@MappingTarget` parameter type as the target class
+3. Excludes `@MappingTarget` parameters from source completions
+
+### Setter Detection
+
+The tool detects and includes setters in completions:
+
+**JavaBean-style setters:**
+
+```java
+public void setName(String name) { ... }  // → "name" (SETTER)
+```
+
+**Builder-style setters:**
+
+```java
+public Builder name(String name) { return this; }  // → "name" (SETTER)
+```
+
+**Fluent setters:**
+
+```java
+public Person withName(String name) { return this; }  // → "withName" (SETTER)
+```
 
 ## Architecture
 
@@ -335,62 +302,87 @@ Run the unit tests:
 
 The test suite includes:
 
-- PathParser tests - path expression parsing
-- ReflectionAnalyzer tests - class introspection (including Java records)
-- PathNavigator tests - end-to-end integration tests (including record navigation)
-- MapStructPathTool tests - main method and CLI functionality
+- **PathParser tests** - Path expression parsing
+- **ReflectionAnalyzer tests** - Class introspection (fields, getters, setters, Java records)
+- **PathNavigator tests** - End-to-end navigation tests including:
+  - Multi-parameter mapper support
+  - Target completion with GETTER→SETTER conversion
+  - Nested path navigation
+  - Collection accessors
+- **IpcServer tests** - IPC protocol tests including:
+  - Multi-source API
+  - JavaBean setter detection
+  - Builder pattern setter detection
+- **MapStructIntegration tests** - Real MapStruct mapper validation
+
+**Test Coverage:** 150+ tests covering all major features
 
 ## Integration with IDEs
 
-This tool can be integrated with IDE plugins to provide MapStruct path completion. Example integration:
+This tool can be integrated with IDE plugins to provide MapStruct path completion via the IPC protocol:
 
-1. IDE plugin calls the tool with current class and partial path
-2. Tool returns JSON with completion suggestions
-3. Plugin displays suggestions to user
+1. Editor plugin starts the IPC server on a Unix Domain Socket
+2. Plugin sends `explore_path` requests with source types and path expressions
+3. Server responds with JSON completion suggestions (fields, getters, setters, parameters)
+4. Plugin displays suggestions to user with appropriate kind indicators
+
+See the **IPC Protocol** section above for detailed request/response formats.
+
+## Field Kind Reference
+
+The tool returns different field kinds based on the context:
+
+| Kind        | Description           | Example               | Usage                |
+| ----------- | --------------------- | --------------------- | -------------------- |
+| `FIELD`     | Public field          | `public String name;` | Source/Target        |
+| `GETTER`    | Getter method         | `getName()` → `name`  | Source               |
+| `SETTER`    | Setter/Builder method | `setName()` → `name`  | Target               |
+| `PARAMETER` | Method parameter      | `map(Person person)`  | Source (multi-param) |
+
+**Automatic Conversion for Target:**
+When completing target attributes (using `"$target"` parameter name), the tool automatically converts:
+
+- `FIELD` → `SETTER`
+- `GETTER` → `SETTER`
+
+This provides better UX by showing fields as "writable" when configuring target mappings, even for immutable classes.
 
 ## Limitations
 
 - Only works with compiled classes on the classpath
-- Requires Java 17 for `getFirst()`/`getLast()` support on collections and record support
+- Requires Java 17+ for `getFirst()`/`getLast()` support on collections and record support
 - Method parameters in paths are ignored (e.g., `get(0)` treats 0 as placeholder)
 - Raw collection types return `Object` as item type
 - Does not support complex generic type scenarios (e.g., nested generics)
-- Only returns public members (fields and getters) as MapStruct can only access public members
+- Only returns public members (fields, getters, setters) as MapStruct can only access public members
 - Returns empty completions for terminal types (primitives, wrapper types like Integer, and String) as they have no useful MapStruct properties to navigate to
+- @MappingTarget detection requires parameter annotations to be available in compiled bytecode (compile with `-parameters` flag or use debug info)
 
 ## Troubleshooting
 
 ### Class Not Found Error
 
-**Problem**: `ClassNotFoundException` when running the tool
+**Problem**: `ClassNotFoundException` when the IPC server tries to analyze a class
 
-**Solution**: Add your classes to the classpath:
-
-```bash
-java -cp "mapstruct-path-explorer.jar:your-classes.jar:another-dependency.jar" \
-  com.dsm.mapstruct.MapStructPathTool \
-  "com.your.Class" "path"
-```
+**Solution**: Ensure your project classes are on the classpath when starting the IPC server. The server inherits the classpath from its launch environment. For editor integrations, configure the classpath to include your compiled classes and dependencies.
 
 ### Empty Completions
 
-**Problem**: Tool returns empty completions
+**Problem**: IPC server returns empty completions
 
 **Possible causes**:
 
 - Invalid path (field/method doesn't exist)
 - Class doesn't have any accessible fields or getters
-- Incorrect class name
+- Incorrect fully qualified class name in `sources[].type`
+- Class not on the server's classpath
 
-**Solution**: Verify the path step by step:
+**Solution**:
 
-```bash
-# Start from root
-java -jar tool.jar "com.example.User" ""
-
-# Then navigate deeper
-java -jar tool.jar "com.example.User" "address."
-```
+- Check server logs for error messages
+- Verify the class name is fully qualified (e.g., `com.example.User`, not `User`)
+- Ensure the class is compiled and on the classpath
+- Test with empty path first, then add segments incrementally
 
 ### Java Version Issues
 
@@ -404,8 +396,15 @@ java -version
 
 ## Status
 
-- [x] Implement core mapstruct path exploring functionality;
-- [x] Covering all by unit tests with using mapstruct real mappers, and make init stabilization work;
-- [x] Implement basic one shot runner from cmd (acceptable only for testing or not hard using (because of long class path usually, and it will have starting performance penalty because of that);
-- [x] Implement lightweight IPC by using Uxin Domain Socket for communication by long running applications like NeoVim;
-- [ ] Testing and stabilization work.
+- [x] Implement core MapStruct path exploring functionality
+- [x] Covering all by unit tests with using MapStruct real mappers, and make init stabilization work
+- [x] Implement basic one shot runner from cmd (acceptable only for testing or not hard using because of long class path usually, and it will have starting performance penalty because of that)
+- [x] Implement lightweight IPC by using Unix Domain Socket for communication by long running applications like NeoVim
+- [x] Multi-parameter mapper support with parameter name completion
+- [x] Setter detection (JavaBean-style, builder patterns, fluent setters)
+- [x] @MappingTarget parameter detection via bytecode analysis
+- [x] Smart field kind conversion for target attributes (GETTER→SETTER)
+- [x] Full IPC protocol with multi-source API
+- [x] Comprehensive test coverage (150+ tests)
+- [ ] Testing and stabilization work
+- [ ] Create separate nvim plugin `blink-cmp-java-mapstruct` with automatic server installation/updates
