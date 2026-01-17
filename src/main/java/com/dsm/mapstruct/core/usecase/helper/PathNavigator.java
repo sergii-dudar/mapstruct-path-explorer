@@ -73,7 +73,11 @@ public class PathNavigator {
         if ((pathExpression == null || pathExpression.isBlank()) && sources.size() == 1) {
             SourceParameter singleParam = sources.get(0);
             Class<?> paramType = Class.forName(singleParam.type());
-            return navigate(paramType, "", isEnum);
+
+            // Detect if this is a target completion (synthetic "$target" parameter name)
+            boolean isTargetCompletion = "$target".equals(singleParam.name());
+
+            return navigate(paramType, "", isEnum, isTargetCompletion);
         }
 
         // Empty path with multiple parameters -> return parameter names as completions
@@ -123,7 +127,7 @@ public class PathNavigator {
      * @return completion result with available fields/getters
      */
     public CompletionResult navigate(Class<?> rootClass, String pathExpression) {
-        return navigate(rootClass, pathExpression, false);
+        return navigate(rootClass, pathExpression, false, false);
     }
 
     /**
@@ -135,6 +139,19 @@ public class PathNavigator {
      * @return completion result with available fields/getters or enum constants
      */
     public CompletionResult navigate(Class<?> rootClass, String pathExpression, boolean isEnum) {
+        return navigate(rootClass, pathExpression, isEnum, false);
+    }
+
+    /**
+     * Navigates through the path and returns completion candidates.
+     *
+     * @param rootClass          the starting class
+     * @param pathExpression     the MapStruct path expression
+     * @param isEnum             true if this is for @ValueMapping (enum constants)
+     * @param isTargetCompletion true if this is for target attribute completion
+     * @return completion result with available fields/getters or enum constants
+     */
+    public CompletionResult navigate(Class<?> rootClass, String pathExpression, boolean isEnum, boolean isTargetCompletion) {
         try {
             List<PathSegment> segments = pathParser.parse(pathExpression);
 
@@ -157,10 +174,12 @@ public class PathNavigator {
                 }
                 // Return all fields and getters from root class
                 List<FieldInfo> allFields = reflectionAnalyzer.getAllFieldsAndGetters(rootClass);
+                // For target completions, convert field kinds to SETTER
+                List<FieldInfo> resultFields = isTargetCompletion ? convertToSetterKind(allFields) : allFields;
                 return CompletionResult.of(rootClass.getName(),
                         rootClass.getSimpleName(),
                         rootClass.getPackageName(),
-                        pathExpression, allFields);
+                        pathExpression, resultFields);
             }
 
             // Navigate through the path
@@ -221,11 +240,14 @@ public class PathNavigator {
             // Filter by prefix if needed
             List<FieldInfo> filtered = NameMatcherUtil.filterByPrefix(allFields, prefix);
 
+            // For target completions, convert field kinds to SETTER
+            List<FieldInfo> resultFields = isTargetCompletion ? convertToSetterKind(filtered) : filtered;
+
             return CompletionResult.of(currentType.getName(),
                     currentType.getSimpleName(),
                     currentType.getPackageName(),
                     pathExpression,
-                    filtered);
+                    resultFields);
 
         } catch (Exception e) {
             // Return empty result on error
@@ -457,6 +479,27 @@ public class PathNavigator {
         String lowerPrefix = prefix.toLowerCase();
         return sources.stream()
             .filter(p -> p.name().toLowerCase().startsWith(lowerPrefix))
+            .toList();
+    }
+
+    /**
+     * Converts GETTER and FIELD kinds to SETTER for target completions.
+     * This provides better UX by showing fields as "writable" when completing target attributes,
+     * even for immutable classes that only have getters.
+     *
+     * PARAMETER kind is preserved (for multi-source mappers).
+     * SETTER kind is already correct and unchanged.
+     */
+    private List<FieldInfo> convertToSetterKind(List<FieldInfo> fields) {
+        return fields.stream()
+            .map(field -> {
+                // Convert GETTER and FIELD to SETTER for target context
+                if (field.kind() == FieldInfo.FieldKind.GETTER || field.kind() == FieldInfo.FieldKind.FIELD) {
+                    return new FieldInfo(field.name(), field.type(), FieldInfo.FieldKind.SETTER);
+                }
+                // Keep PARAMETER and SETTER unchanged
+                return field;
+            })
             .toList();
     }
 }

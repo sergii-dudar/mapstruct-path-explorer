@@ -124,8 +124,15 @@ class IpcServerTest {
     @Order(3)
     void testExplorePathRootLevel() throws IOException {
         JsonObject params = new JsonObject();
-        params.addProperty("className", "com.dsm.mapstruct.testdata.TestClasses$Person");
+
+        // Use new multi-source API
+        JsonObject source = new JsonObject();
+        source.addProperty("name", "person");
+        source.addProperty("type", "com.dsm.mapstruct.testdata.TestClasses$Person");
+
+        params.add("sources", gson.toJsonTree(new JsonObject[]{source}));
         params.addProperty("pathExpression", "");
+        params.addProperty("isEnum", false);
 
         JsonObject response = sendRequest("explore_path", params);
 
@@ -158,8 +165,15 @@ class IpcServerTest {
     @Order(4)
     void testExplorePathNested() throws IOException {
         JsonObject params = new JsonObject();
-        params.addProperty("className", "com.dsm.mapstruct.testdata.TestClasses$Person");
-        params.addProperty("pathExpression", "address.");
+
+        // Use new multi-source API
+        JsonObject source = new JsonObject();
+        source.addProperty("name", "person");
+        source.addProperty("type", "com.dsm.mapstruct.testdata.TestClasses$Person");
+
+        params.add("sources", gson.toJsonTree(new JsonObject[]{source}));
+        params.addProperty("pathExpression", "person.address.");
+        params.addProperty("isEnum", false);
 
         JsonObject response = sendRequest("explore_path", params);
 
@@ -188,8 +202,15 @@ class IpcServerTest {
     @Order(5)
     void testExplorePathDeeplyNested() throws IOException {
         JsonObject params = new JsonObject();
-        params.addProperty("className", "com.dsm.mapstruct.testdata.TestClasses$Person");
-        params.addProperty("pathExpression", "address.country.");
+
+        // Use new multi-source API
+        JsonObject source = new JsonObject();
+        source.addProperty("name", "person");
+        source.addProperty("type", "com.dsm.mapstruct.testdata.TestClasses$Person");
+
+        params.add("sources", gson.toJsonTree(new JsonObject[]{source}));
+        params.addProperty("pathExpression", "person.address.country.");
+        params.addProperty("isEnum", false);
 
         JsonObject response = sendRequest("explore_path", params);
 
@@ -200,16 +221,23 @@ class IpcServerTest {
 
         JsonObject result = response.get("result").getAsJsonObject();
         var completions = result.get("completions").getAsJsonArray();
-        // City might be a String, so completions would be empty or might have String methods
-        System.out.println("City completions: " + completions.size());
+        // Country has fields, so completions should exist
+        System.out.println("Country completions: " + completions.size());
     }
 
     @Test
     @Order(6)
     void testExplorePathInvalidClass() throws IOException {
         JsonObject params = new JsonObject();
-        params.addProperty("className", "com.nonexistent.FakeClass");
+
+        // Use new multi-source API with invalid class
+        JsonObject source = new JsonObject();
+        source.addProperty("name", "fake");
+        source.addProperty("type", "com.nonexistent.FakeClass");
+
+        params.add("sources", gson.toJsonTree(new JsonObject[]{source}));
         params.addProperty("pathExpression", "");
+        params.addProperty("isEnum", false);
 
         JsonObject response = sendRequest("explore_path", params);
 
@@ -217,7 +245,7 @@ class IpcServerTest {
 
         assertThat(response.has("error")).isTrue();
         assertThat(response.get("error").getAsString())
-                .contains("Class not found");
+                .contains("com.nonexistent.FakeClass");
     }
 
     @Test
