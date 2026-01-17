@@ -9,8 +9,19 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class IpcServerRunner {
+
+    // Single-threaded executor for handling client connection (one server per client)
+    private static final ExecutorService clientExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread thread = new Thread(r);
+        thread.setName("MapStruct-Client-Handler");
+        thread.setDaemon(false);
+        return thread;
+    });
 
     /**
      * Runs the tool with the given arguments and returns an exit code.
@@ -34,11 +45,25 @@ public class IpcServerRunner {
             ServerSocketChannel server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
             server.bind(address);
 
+            // Add shutdown hook to gracefully stop executor
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                System.out.println("Shutting down client executor...");
+                shutdownExecutor();
+            }));
+
             System.out.println("IPC server started on " + socketPath);
 
             while (true) {
                 SocketChannel client = server.accept();
-                IpcClientMessageListener.handleClient(client);
+                // Submit client handling to thread pool
+                clientExecutor.submit(() -> {
+                    try {
+                        IpcClientMessageListener.handleClient(client);
+                    } catch (Exception e) {
+                        System.err.println("Error handling client: " + e.getMessage());
+                        e.printStackTrace(System.err);
+                    }
+                });
             }
         } catch (IOException e) {
             // happens when socket disappears or Neovim dies
@@ -64,6 +89,24 @@ public class IpcServerRunner {
             return 1;
         }
         return 0;
+    }
+
+    /**
+     * Gracefully shutdown the executor service.
+     */
+    private static void shutdownExecutor() {
+        clientExecutor.shutdown();
+        try {
+            if (!clientExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                clientExecutor.shutdownNow();
+                if (!clientExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    System.err.println("Executor did not terminate");
+                }
+            }
+        } catch (InterruptedException e) {
+            clientExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
     private static void printUsage() {
