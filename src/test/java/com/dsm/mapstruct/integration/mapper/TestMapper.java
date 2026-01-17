@@ -152,7 +152,11 @@ public interface TestMapper {
     @Mapping(target = "countryCode", source = "person.address.country.code")
     @Mapping(target = "firstOrderId", source = "person.orders.first.orderId")
     @Mapping(target = "firstProductName", source = "person.orders.first.items.first.product.name")
-    CompletePersonDTO mapCompletePerson(Person person, Order order, String customFullName);
+    CompletePersonDTO mapCompletePerson(
+                                        Person person,
+                                        Order order,
+                                        String customFullName
+    );
 
     @Mapping(target = "fullName", source = "customFullName")
     @Mapping(target = "age", source = "person.age")
