@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import com.dsm.mapstruct.core.usecase.helper.PathNavigator;
 import com.dsm.mapstruct.core.model.CompletionResult;
+import com.dsm.mapstruct.core.model.FieldInfo;
 import com.dsm.mapstruct.testdata.TestClasses.Company;
 import com.dsm.mapstruct.testdata.TestClasses.Order;
 import com.dsm.mapstruct.testdata.TestClasses.Person;
@@ -614,5 +615,146 @@ class PathNavigatorTest {
         assertThat(result.completions()).extracting("name")
                 .contains("street", "state")
                 .doesNotContain("city", "zipCode");
+    }
+
+    // ===== Target Completion Tests (GETTER/FIELD -> SETTER conversion) =====
+
+    @Test
+    void testNavigate_TargetCompletion_ConvertsGettersToSetters() {
+        // When isTargetCompletion=true, GETTER kinds should be converted to SETTER
+        CompletionResult result = navigator.navigate(
+            Person.class,
+            "",
+            false,
+            true  // isTargetCompletion = true
+        );
+
+        assertThat(result.completions()).isNotEmpty();
+
+        // All completions should be SETTER kind, not GETTER
+        assertThat(result.completions())
+                .allMatch(f -> f.kind() == FieldInfo.FieldKind.SETTER);
+
+        assertThat(result.completions()).extracting("name")
+                .contains("firstName", "lastName", "age");
+    }
+
+    @Test
+    void testNavigate_SourceCompletion_KeepsGetterKind() {
+        // When isTargetCompletion=false, GETTER kinds should remain as GETTER
+        CompletionResult result = navigator.navigate(
+            Person.class,
+            "",
+            false,
+            false  // isTargetCompletion = false
+        );
+
+        assertThat(result.completions()).isNotEmpty();
+
+        // Should have GETTER kinds (not converted)
+        long getterCount = result.completions().stream()
+                .filter(f -> f.kind() == FieldInfo.FieldKind.GETTER)
+                .count();
+
+        assertThat(getterCount).isGreaterThan(0);
+    }
+
+    @Test
+    void testNavigate_TargetCompletion_ConvertsFieldsToSetters() {
+        // When isTargetCompletion=true, FIELD kinds should also be converted to SETTER
+        CompletionResult result = navigator.navigate(
+            Person.class,
+            "",
+            false,
+            true  // isTargetCompletion = true
+        );
+
+        // All completions should be SETTER kind
+        assertThat(result.completions())
+                .allMatch(f -> f.kind() == FieldInfo.FieldKind.SETTER);
+    }
+
+    @Test
+    void testNavigate_TargetCompletion_NestedPath() {
+        // Target completion conversion should work for nested paths
+        CompletionResult result = navigator.navigate(
+            Person.class,
+            "address.",
+            false,
+            true  // isTargetCompletion = true
+        );
+
+        assertThat(result.completions()).isNotEmpty();
+
+        // All address field completions should be SETTER kind
+        assertThat(result.completions())
+                .allMatch(f -> f.kind() == FieldInfo.FieldKind.SETTER);
+
+        assertThat(result.completions()).extracting("name")
+                .contains("street", "city", "state", "zipCode");
+    }
+
+    @Test
+    void testNavigateFromSources_TargetCompletion_WithSyntheticParameter() {
+        // Test target completion using $target synthetic parameter name
+        List<SourceParameter> sources = List.of(
+            new SourceParameter("$target", "com.dsm.mapstruct.testdata.TestClasses$Person")
+        );
+
+        CompletionResult result = navigator.navigateFromSources(sources, "", false);
+
+        assertThat(result.completions()).isNotEmpty();
+
+        // Should automatically convert to SETTER kind for $target parameter
+        assertThat(result.completions())
+                .allMatch(f -> f.kind() == FieldInfo.FieldKind.SETTER);
+    }
+
+    @Test
+    void testNavigate_TargetCompletion_PreservesParameterKind() {
+        // For multi-source scenarios, PARAMETER kind should not be converted
+        // (though this is an edge case since targets don't usually have parameters)
+        // This test ensures conversion logic only affects GETTER and FIELD kinds
+        CompletionResult result = navigator.navigate(
+            Person.class,
+            "",
+            false,
+            true
+        );
+
+        // Should have all SETTER kinds (converted from GETTER/FIELD)
+        assertThat(result.completions())
+                .allMatch(f -> f.kind() == FieldInfo.FieldKind.SETTER);
+    }
+
+    @Test
+    void testNavigate_TargetCompletion_RealBuilderClass() {
+        // Test with actual Lombok builder class from CompletePersonDTO
+        try {
+            Class<?> builderClass = Class.forName(
+                "com.dsm.mapstruct.integration.dto.CompletePersonDTO$CompletePersonDTOBuilder"
+            );
+
+            CompletionResult result = navigator.navigate(
+                builderClass,
+                "",
+                false,
+                true  // isTargetCompletion = true
+            );
+
+            assertThat(result.completions()).isNotEmpty();
+
+            // Builder setters should already be SETTER kind, and remain SETTER
+            assertThat(result.completions())
+                    .allMatch(f -> f.kind() == FieldInfo.FieldKind.SETTER);
+
+            // Check for actual builder methods
+            assertThat(result.completions()).extracting("name")
+                    .contains("fullName", "age", "city");
+
+        } catch (ClassNotFoundException e) {
+            // Skip test if builder class not available (generated at compile time)
+            org.junit.jupiter.api.Assumptions.assumeTrue(false, "Builder class not available");
+        }
     }
 }

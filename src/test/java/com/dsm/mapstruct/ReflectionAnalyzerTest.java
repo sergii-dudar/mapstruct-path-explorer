@@ -3,6 +3,10 @@ package com.dsm.mapstruct;
 import com.dsm.mapstruct.core.model.FieldInfo;
 import com.dsm.mapstruct.core.usecase.helper.ReflectionAnalyzer;
 import com.dsm.mapstruct.testdata.TestClasses.*;
+
+import static com.dsm.mapstruct.testdata.TestClasses.PersonPojo;
+import static com.dsm.mapstruct.testdata.TestClasses.FluentBuilder;
+
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.junit.jupiter.api.Test;
@@ -220,5 +224,103 @@ class ReflectionAnalyzerTest {
         assertThat(all).extracting(FieldInfo::name)
                 .contains("firstName", "lastName", "age");
         assertThat(all).allMatch(f -> f.kind() == FieldInfo.FieldKind.GETTER);
+    }
+
+    // ===== Setter Tests =====
+
+    @Test
+    void testGetAllSetters_JavaBeanStyle() {
+        List<FieldInfo> setters = analyzer.getAllSetters(PersonPojo.class);
+
+        assertThat(setters).isNotEmpty();
+        // Setter names should be transformed: setName -> name, setAge -> age
+        assertThat(setters).extracting(FieldInfo::name)
+                .contains("name", "age", "email");
+        assertThat(setters).allMatch(f -> f.kind() == FieldInfo.FieldKind.SETTER);
+    }
+
+    @Test
+    void testGetAllSetters_FluentBuilderStyle() {
+        List<FieldInfo> setters = analyzer.getAllSetters(FluentBuilder.class);
+
+        assertThat(setters).isNotEmpty();
+        // Builder setter names should be as-is: title -> title, description -> description
+        assertThat(setters).extracting(FieldInfo::name)
+                .contains("title", "description", "priority");
+        assertThat(setters).allMatch(f -> f.kind() == FieldInfo.FieldKind.SETTER);
+    }
+
+    @Test
+    void testGetAllSetters_SetterTypes() {
+        List<FieldInfo> setters = analyzer.getAllSetters(PersonPojo.class);
+
+        FieldInfo nameSetter = setters.stream()
+                .filter(f -> f.name().equals("name"))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(nameSetter.type()).isEqualTo("String");
+
+        FieldInfo ageSetter = setters.stream()
+                .filter(f -> f.name().equals("age"))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(ageSetter.type()).isEqualTo("int");
+    }
+
+    @Test
+    void testGetAllFieldsAndGetters_IncludesSetters() {
+        // For classes with setters, getAllFieldsAndGetters should include both getters and setters
+        List<FieldInfo> all = analyzer.getAllFieldsAndGetters(PersonPojo.class);
+
+        assertThat(all).isNotEmpty();
+
+        // Should have both getters and setters
+        long getterCount = all.stream().filter(f -> f.kind() == FieldInfo.FieldKind.GETTER).count();
+        long setterCount = all.stream().filter(f -> f.kind() == FieldInfo.FieldKind.SETTER).count();
+
+        assertThat(getterCount).isGreaterThan(0);
+        assertThat(setterCount).isGreaterThan(0);
+
+        // All properties should be present
+        assertThat(all).extracting(FieldInfo::name)
+                .contains("name", "age", "email");
+    }
+
+    @Test
+    void testGetAllFieldsAndGetters_BuilderSetters() {
+        List<FieldInfo> all = analyzer.getAllFieldsAndGetters(FluentBuilder.class);
+
+        assertThat(all).isNotEmpty();
+
+        // Should have both getters and setters
+        assertThat(all).extracting(FieldInfo::name)
+                .contains("title", "description", "priority");
+
+        // Check that setters are properly detected
+        long setterCount = all.stream().filter(f -> f.kind() == FieldInfo.FieldKind.SETTER).count();
+        assertThat(setterCount).isEqualTo(3);
+    }
+
+    @Test
+    void testGetAllSetters_ExcludesNonSetterMethods() {
+        List<FieldInfo> setters = analyzer.getAllSetters(FluentBuilder.class);
+
+        // Should not include build() method (returns FluentBuilder but takes no params)
+        assertThat(setters).extracting(FieldInfo::name)
+                .doesNotContain("build");
+
+        // Should not include getter methods
+        assertThat(setters).extracting(FieldInfo::name)
+                .doesNotContain("getTitle", "getDescription", "getPriority");
+    }
+
+    @Test
+    void testGetAllSetters_EmptyForImmutableClass() {
+        // Immutable classes (like Person with @Value) should have no setters
+        List<FieldInfo> setters = analyzer.getAllSetters(Person.class);
+
+        assertThat(setters).isEmpty();
     }
 }

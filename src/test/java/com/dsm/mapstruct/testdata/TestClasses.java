@@ -275,4 +275,77 @@ public class TestClasses {
         COMPLETED,
         REJECTED
     }
+
+    /**
+     * Simple POJO with JavaBean-style setters for testing setter detection.
+     */
+    public static class PersonPojo {
+        private String name;
+        private int age;
+        private String email;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public int getAge() {
+            return age;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+    }
+
+    /**
+     * Fluent builder-style class for testing builder setter detection.
+     */
+    public static class FluentBuilder {
+        private String title;
+        private String description;
+        private int priority;
+
+        public FluentBuilder title(String title) {
+            this.title = title;
+            return this;
+        }
+
+        public FluentBuilder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public FluentBuilder priority(int priority) {
+            this.priority = priority;
+            return this;
+        }
+
+        public FluentBuilder build() {
+            return this;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public int getPriority() {
+            return priority;
+        }
+    }
 }

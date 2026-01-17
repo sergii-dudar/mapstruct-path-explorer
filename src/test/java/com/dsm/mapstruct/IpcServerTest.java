@@ -274,4 +274,145 @@ class IpcServerTest {
         assertThat(response.get("error").getAsString())
                 .contains("Unknown method");
     }
+
+    @Test
+    @Order(9)
+    void testExplorePathWithJavaBeanSetters() throws IOException {
+        JsonObject params = new JsonObject();
+
+        // Test with PersonPojo class that has JavaBean-style setters
+        JsonObject source = new JsonObject();
+        source.addProperty("name", "$target");
+        source.addProperty("type", "com.dsm.mapstruct.testdata.TestClasses$PersonPojo");
+
+        params.add("sources", gson.toJsonTree(new JsonObject[]{source}));
+        params.addProperty("pathExpression", "");
+        params.addProperty("isEnum", false);
+
+        JsonObject response = sendRequest("explore_path", params);
+
+        System.out.println("\nJavaBean setters response: " + gson.toJson(response));
+
+        assertThat(response.has("error")).isFalse();
+        assertThat(response.has("result")).isTrue();
+
+        JsonObject result = response.get("result").getAsJsonObject();
+        var completions = result.get("completions").getAsJsonArray();
+
+        assertThat(completions.size()).isGreaterThan(0);
+
+        // Should have both getters and setters
+        System.out.println("PersonPojo completions: " + completions.size());
+        completions.forEach(item -> {
+            JsonObject field = item.getAsJsonObject();
+            System.out.println(String.format("  - %s: %s (%s)",
+                    field.get("name").getAsString(),
+                    field.get("type").getAsString(),
+                    field.get("kind").getAsString()
+            ));
+        });
+
+        // Verify setters are present and marked as SETTER kind
+        long setterCount = 0;
+        for (int i = 0; i < completions.size(); i++) {
+            JsonObject completion = completions.get(i).getAsJsonObject();
+            if (completion.get("kind").getAsString().equals("SETTER")) {
+                setterCount++;
+            }
+        }
+
+        assertThat(setterCount).as("Should have SETTER kind completions").isGreaterThan(0);
+
+        // Should include name, age, email properties
+        boolean hasName = false;
+        boolean hasAge = false;
+        boolean hasEmail = false;
+
+        for (int i = 0; i < completions.size(); i++) {
+            JsonObject completion = completions.get(i).getAsJsonObject();
+            String name = completion.get("name").getAsString();
+            if (name.equals("name")) hasName = true;
+            if (name.equals("age")) hasAge = true;
+            if (name.equals("email")) hasEmail = true;
+        }
+
+        assertThat(hasName).isTrue();
+        assertThat(hasAge).isTrue();
+        assertThat(hasEmail).isTrue();
+    }
+
+    @Test
+    @Order(10)
+    void testExplorePathWithFluentBuilderSetters() throws IOException {
+        JsonObject params = new JsonObject();
+
+        // Test with FluentBuilder class that has fluent-style setters
+        JsonObject source = new JsonObject();
+        source.addProperty("name", "$target");
+        source.addProperty("type", "com.dsm.mapstruct.testdata.TestClasses$FluentBuilder");
+
+        params.add("sources", gson.toJsonTree(new JsonObject[]{source}));
+        params.addProperty("pathExpression", "");
+        params.addProperty("isEnum", false);
+
+        JsonObject response = sendRequest("explore_path", params);
+
+        System.out.println("\nFluent builder setters response: " + gson.toJson(response));
+
+        assertThat(response.has("error")).isFalse();
+        assertThat(response.has("result")).isTrue();
+
+        JsonObject result = response.get("result").getAsJsonObject();
+        var completions = result.get("completions").getAsJsonArray();
+
+        assertThat(completions.size()).isGreaterThan(0);
+
+        // Should have both getters and setters
+        System.out.println("FluentBuilder completions: " + completions.size());
+        completions.forEach(item -> {
+            JsonObject field = item.getAsJsonObject();
+            System.out.println(String.format("  - %s: %s (%s)",
+                    field.get("name").getAsString(),
+                    field.get("type").getAsString(),
+                    field.get("kind").getAsString()
+            ));
+        });
+
+        // Verify setters are present and marked as SETTER kind
+        long setterCount = 0;
+        for (int i = 0; i < completions.size(); i++) {
+            JsonObject completion = completions.get(i).getAsJsonObject();
+            if (completion.get("kind").getAsString().equals("SETTER")) {
+                setterCount++;
+            }
+        }
+
+        assertThat(setterCount).as("Should have SETTER kind completions").isGreaterThan(0);
+
+        // Should include title, description, priority properties
+        boolean hasTitle = false;
+        boolean hasDescription = false;
+        boolean hasPriority = false;
+
+        for (int i = 0; i < completions.size(); i++) {
+            JsonObject completion = completions.get(i).getAsJsonObject();
+            String name = completion.get("name").getAsString();
+            if (name.equals("title")) hasTitle = true;
+            if (name.equals("description")) hasDescription = true;
+            if (name.equals("priority")) hasPriority = true;
+        }
+
+        assertThat(hasTitle).isTrue();
+        assertThat(hasDescription).isTrue();
+        assertThat(hasPriority).isTrue();
+
+        // Should NOT include build() method (it takes no parameters)
+        boolean hasBuild = false;
+        for (int i = 0; i < completions.size(); i++) {
+            JsonObject completion = completions.get(i).getAsJsonObject();
+            String name = completion.get("name").getAsString();
+            if (name.equals("build")) hasBuild = true;
+        }
+        assertThat(hasBuild).as("Should not include build() method").isFalse();
+    }
 }
