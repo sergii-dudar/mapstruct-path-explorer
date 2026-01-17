@@ -240,8 +240,15 @@ public class PathNavigator {
             // Filter by prefix if needed
             List<FieldInfo> filtered = NameMatcherUtil.filterByPrefix(allFields, prefix);
 
-            // For target completions, convert field kinds to SETTER
-            List<FieldInfo> resultFields = isTargetCompletion ? convertToSetterKind(filtered) : filtered;
+            // Apply context-specific filtering
+            List<FieldInfo> resultFields;
+            if (isTargetCompletion) {
+                // For target completions, convert field kinds to SETTER
+                resultFields = convertToSetterKind(filtered);
+            } else {
+                // For source completions, filter out SETTER kind (keep only FIELD, GETTER, PARAMETER)
+                resultFields = filterOutSetters(filtered);
+            }
 
             return CompletionResult.of(currentType.getName(),
                     currentType.getSimpleName(),
@@ -479,6 +486,17 @@ public class PathNavigator {
         String lowerPrefix = prefix.toLowerCase();
         return sources.stream()
             .filter(p -> p.name().toLowerCase().startsWith(lowerPrefix))
+            .toList();
+    }
+
+    /**
+     * Filters out SETTER kind for source completions.
+     * Source mappings can only read from fields, getters, and parameters - not call setters.
+     * This removes methods like addFirst, addLast, replaceAll, sort, etc. from source completions.
+     */
+    private List<FieldInfo> filterOutSetters(List<FieldInfo> fields) {
+        return fields.stream()
+            .filter(field -> field.kind() != FieldInfo.FieldKind.SETTER)
             .toList();
     }
 
