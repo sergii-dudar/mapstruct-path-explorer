@@ -2,6 +2,8 @@
 <configuration>
     <property name="LOG_FILE"
               value="${user.home}/.local/state/nvim/mapstruct-source-server.log"/>
+    <property name="LOG_LEVEL"
+              value="${mapstruct.log.level:-INFO}"/>
 
     <appender name="FILE"
               class="ch.qos.logback.core.FileAppender">
@@ -20,9 +22,9 @@
     </appender>
 
     <logger name="com.dsm.mapstruct"
-            level="DEBUG"/>
+            level="${LOG_LEVEL}"/>
 
-    <root level="INFO">
+    <root level="WARN">
         <appender-ref ref="FILE"/>
         <!-- <appender-ref ref="STDOUT"/> -->
     </root>
