@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <property name="LOG_FILE"
-              value="${user.home}/.local/state/nvim/mapstruct-source-server.log"/>
+              value="${mapstruct.log.file:-${user.home}/.local/state/nvim/mapstruct-source-server.log}"/>
     <property name="LOG_LEVEL"
               value="${mapstruct.log.level:-INFO}"/>
 
@@ -26,7 +26,7 @@
 
     <root level="WARN">
         <appender-ref ref="FILE"/>
-        <!-- <appender-ref ref="STDOUT"/> -->
+        <appender-ref ref="STDOUT"/>
     </root>
 </configuration>
 
