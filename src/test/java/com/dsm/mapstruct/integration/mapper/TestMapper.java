@@ -99,7 +99,7 @@ public interface TestMapper {
     MultiplePrimitivesDTO mapMultiplePrimitives(Person person);
 
     // String concatenation with expression
-    @Mapping(target = "fullAddress", expression = "java(person.getAddress() != null ? person.getAddress().getCity() + \", \" + person.getAddress().getState() + \" \" + person.getAddress().getZipCode() : null)")
+    @Mapping(target = "fullAddress", expression = "java(person.getAddress() != null ? person.getAddress().getCity() + person.getAddress().getState() + person.getAddress().getZipCode() : null)")
     ConcatenatedDTO mapConcatenated(Person person);
 
     // Complete person mapping - comprehensive test
@@ -114,6 +114,13 @@ public interface TestMapper {
     @Mapping(target = "firstOrderId", source = "orders.first.orderId")
     @Mapping(target = "firstProductName", source = "orders.first.items.first.product.name")
     CompletePersonDTO mapCompletePerson(Person person);
+
+    @Mapping(target = "name", source = "fullName")
+    @Mapping(target = "sku", source = "fullName")
+    @Mapping(target = "price", source = "age")
+    @Mapping(target = "item.details.detailName", source = "fullName")
+    @Mapping(target = "item.details.message", source = "fullName")
+    ProductMutableDTO toProductMutable(Person person);
 
     @Mapping(target = "address.city", source = "address.city")
     Person toPerson(Person person);
