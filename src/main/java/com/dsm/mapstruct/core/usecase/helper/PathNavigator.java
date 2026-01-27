@@ -507,6 +507,8 @@ public class PathNavigator {
      *
      * PARAMETER kind is preserved (for multi-source mappers).
      * SETTER kind is already correct and unchanged.
+     * 
+     * Deduplicates by field name - if both getter and setter exist, keeps only one SETTER.
      */
     private List<FieldInfo> convertToSetterKind(List<FieldInfo> fields) {
         return fields.stream()
@@ -518,6 +520,15 @@ public class PathNavigator {
                 // Keep PARAMETER and SETTER unchanged
                 return field;
             })
+            // Deduplicate by name - if same name appears multiple times, keep first one
+            .collect(java.util.stream.Collectors.toMap(
+                FieldInfo::name,           // key: field name
+                field -> field,             // value: the field itself
+                (existing, replacement) -> existing, // merge function: keep existing on duplicate
+                java.util.LinkedHashMap::new  // maintain order
+            ))
+            .values()
+            .stream()
             .toList();
     }
 }
