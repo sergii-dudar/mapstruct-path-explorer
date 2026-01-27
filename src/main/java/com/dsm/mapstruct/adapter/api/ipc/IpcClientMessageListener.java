@@ -1,16 +1,14 @@
 package com.dsm.mapstruct.adapter.api.ipc;
 
-import com.dsm.mapstruct.core.model.CompletionResult;
 import com.dsm.mapstruct.core.model.SourceParameter;
 import com.dsm.mapstruct.core.usecase.ExplorePathUseCase;
+import com.dsm.mapstruct.core.usecase.ExploreTypeSourceUseCase;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -26,6 +24,7 @@ public class IpcClientMessageListener {
     private static final Gson gson = new Gson();
     private static final long HEARTBEAT_TIMEOUT_MS = 30000; // 30 seconds
     private static final ExplorePathUseCase explorePathUseCase = new ExplorePathUseCase();
+    private static final ExploreTypeSourceUseCase exploreTypeSourceUseCase = new ExploreTypeSourceUseCase();
 
     public static void handleClient(SocketChannel client) {
         log.info("New client connected: {}", client);
@@ -54,9 +53,9 @@ public class IpcClientMessageListener {
         heartbeatMonitor.start();
 
         try (
-            BufferedReader in = new BufferedReader(new InputStreamReader(Channels.newInputStream(client)));
-            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(Channels.newOutputStream(client)))
-            ) {
+             BufferedReader in = new BufferedReader(new InputStreamReader(Channels.newInputStream(client)));
+             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(Channels.newOutputStream(client)))
+        ) {
             log.debug("Client streams initialized");
             String line;
             while ((line = in.readLine()) != null) {
@@ -128,7 +127,8 @@ public class IpcClientMessageListener {
                                 // Parse sources array (new protocol)
                                 List<SourceParameter> sources = new ArrayList<>();
                                 if (params.has("sources") && params.get("sources").isJsonArray()) {
-                                    Type sourceListType = new TypeToken<List<SourceParameter>>(){}.getType();
+                                    Type sourceListType = new TypeToken<List<SourceParameter>>() {
+                                    }.getType();
                                     sources = gson.fromJson(params.get("sources"), sourceListType);
                                     log.debug("Parsed {} sources", sources.size());
                                 }
@@ -141,7 +141,7 @@ public class IpcClientMessageListener {
                                         log.debug("Executing path exploration for {} sources", sources.size());
                                         // Execute path exploration with multi-parameter support
                                         ExplorePathUseCase.ExplorePathParams exploreParams =
-                                            new ExplorePathUseCase.ExplorePathParams(sources, pathExpression, isEnum);
+                                                new ExplorePathUseCase.ExplorePathParams(sources, pathExpression, isEnum);
                                         String resultJson = explorePathUseCase.execute(exploreParams);
                                         log.debug("Path exploration completed successfully");
 
@@ -152,6 +152,40 @@ public class IpcClientMessageListener {
                                     } catch (Exception e) {
                                         log.error("Error exploring path: {}", e.getMessage(), e);
                                         response.addProperty("error", "Error exploring path: " + e.getMessage());
+                                        e.printStackTrace();
+                                    }
+                                }
+                                break;
+
+                            case "explore_type_source":
+                                log.debug("Handling explore_type_source request");
+                                String typeName = params.has("typeName") ? params.get("typeName").getAsString() : null;
+
+                                if (typeName == null) {
+                                    log.error("Missing required param - typeName: null");
+                                    response.addProperty("error", "Missing required param: typeName");
+                                } else {
+                                    try {
+                                        log.debug("Executing type source exploration for type: {}", typeName);
+                                        // Load the class
+                                        Class<?> clazz = Class.forName(typeName);
+
+                                        // Execute type source exploration
+                                        ExploreTypeSourceUseCase.ExploreTypeSourceParams exploreParams =
+                                                new ExploreTypeSourceUseCase.ExploreTypeSourceParams(clazz);
+                                        String resultJson = exploreTypeSourceUseCase.execute(exploreParams);
+                                        log.debug("Type source exploration completed successfully");
+
+                                        // Parse the result and return it
+                                        JsonObject resultObj = JsonParser.parseString(resultJson).getAsJsonObject();
+                                        response.add("result", resultObj);
+
+                                    } catch (ClassNotFoundException e) {
+                                        log.error("Class not found: {}", typeName, e);
+                                        response.addProperty("error", "Class not found: " + typeName);
+                                    } catch (Exception e) {
+                                        log.error("Error exploring type source: {}", e.getMessage(), e);
+                                        response.addProperty("error", "Error exploring type source: " + e.getMessage());
                                         e.printStackTrace();
                                     }
                                 }
@@ -182,11 +216,11 @@ public class IpcClientMessageListener {
             heartbeatMonitor.interrupt();
             log.info("Shutting down server - client disconnected");
             System.exit(0); // Shutdown daemon when client disconnects
-            } catch (IOException e) {
+        } catch (IOException e) {
             log.error("Client connection error: {}", e.getMessage(), e);
             System.out.println("Client connection error: " + e.getMessage());
             log.info("Shutting down server due to connection error");
             System.exit(0); // Shutdown daemon on connection error
-            }
+        }
     }
 }
