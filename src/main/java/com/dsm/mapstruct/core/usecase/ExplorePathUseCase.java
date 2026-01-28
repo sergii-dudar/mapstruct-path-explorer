@@ -28,19 +28,47 @@ public class ExplorePathUseCase implements UseCase<ExplorePathParams, String> {
     public String execute(ExplorePathParams input) {
         // Navigate and get completions using multi-parameter support
         CompletionResult result = navigator.navigateFromSources(
-            input.sources,
-            input.pathExpression,
-            input.isEnum
+                input.sources,
+                input.pathExpression,
+                input.isEnum
         );
 
+        // Deduplicate completions by name (keep first occurrence)
+        CompletionResult deduplicated = deduplicateCompletions(result);
+
         // Output as JSON
-        return GSON.toJson(result);
+        return GSON.toJson(deduplicated);
+    }
+
+    /**
+     * Deduplicates completions by field name, keeping the first occurrence.
+     * This handles cases where both field and getter exist for the same property.
+     */
+    private CompletionResult deduplicateCompletions(CompletionResult result) {
+        var uniqueCompletions = result.completions().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        field -> field.name(),                    // key: field name
+                        field -> field,                            // value: the field itself
+                        (existing, replacement) -> existing,       // keep first on duplicate
+                        java.util.LinkedHashMap::new               // maintain order
+                ))
+                .values()
+                .stream()
+                .toList();
+
+        return new CompletionResult(
+                result.className(),
+                result.simpleName(),
+                result.packageName(),
+                result.path(),
+                uniqueCompletions
+        );
     }
 
     public record ExplorePathParams(
-        List<SourceParameter> sources,
-        String pathExpression,
-        boolean isEnum
+                                    List<SourceParameter> sources,
+                                    String pathExpression,
+                                    boolean isEnum
     ) {
         public ExplorePathParams {
             if (sources == null || sources.isEmpty()) {

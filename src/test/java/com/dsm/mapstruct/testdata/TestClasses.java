@@ -1,8 +1,9 @@
 package com.dsm.mapstruct.testdata;
 
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
 import java.util.List;
-import lombok.Builder;
-import lombok.Value;
 
 /**
  * Test data classes for unit testing.
@@ -268,12 +269,19 @@ public class TestClasses {
     /**
      * Order state enum for testing @ValueMapping.
      */
+    @Getter
+    @RequiredArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
     public enum OrderState {
-        NEW,
-        PROCESSING,
-        IN_TRANSIT,
-        COMPLETED,
-        REJECTED
+        NEW("new", true, 1),
+        PROCESSING("process", true, 1),
+        IN_TRANSIT("in transit", true, 1),
+        COMPLETED("completed", true, 1),
+        REJECTED("rejected", true, 1);
+
+        String value;
+        Boolean flag;
+        Integer order;
     }
 
     /**

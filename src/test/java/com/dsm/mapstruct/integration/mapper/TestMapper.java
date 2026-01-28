@@ -199,4 +199,7 @@ public interface TestMapper {
     @ValueMapping(target = "CANCELLED", source = "REJECTED")
     @ValueMapping(target = MappingConstants.THROW_EXCEPTION, source = MappingConstants.ANY_UNMAPPED)
     OrderStatus fromStatusString(String state);
+
+    @Mapping(target = "memberLastName", source = "value")
+    DepartmentMemberDTO fromState(OrderState state);
 }
