@@ -18,7 +18,10 @@ public class TestClasses {
     public static class Person {
         public String firstName;
         public String lastName;
+        public String iban;
+        public String sPerson;
         public int age;
+        public int age2;
         public Address address;
         public List<Order> orders;
 
@@ -30,11 +33,19 @@ public class TestClasses {
             return lastName;
         }
 
+        public String getIBAN() {
+            return iban;
+        }
+
         public int getAge() {
             return age;
         }
 
         public Address getAddress() {
+            return address;
+        }
+
+        public Address getADDRESS() {
             return address;
         }
 

@@ -55,7 +55,9 @@ public interface TestMapper {
     // Multiple collection accessors
     @Mapping(target = "firstOrderId", source = "orders.first.orderId")
     @Mapping(target = "lastOrderId", source = "orders.last.orderId")
-    @Mapping(target = "firstProductName", source = "orders.first.items.first.product.name")
+    // @Mapping(target = "firstProductName", source = "orders.first.items.first.product.name")
+    // @Mapping(target = "firstProductName", source = "IBAN")
+    @Mapping(target = "firstProductName", source = "ADDRESS.city")
     MultipleCollectionDTO mapMultipleCollections(Person person);
 
     // Company departments
@@ -120,6 +122,8 @@ public interface TestMapper {
     @Mapping(target = "price", source = "age")
     @Mapping(target = "item.details.detailName", source = "fullName")
     @Mapping(target = "item.details.message", source = "fullName")
+    @Mapping(target = "SPerson", source = "fullName")
+    @Mapping(target = "IBAN", source = "fullName")
     ProductMutableDTO toProductMutable(Person person);
 
     @Mapping(target = "address.city", source = "address.city")

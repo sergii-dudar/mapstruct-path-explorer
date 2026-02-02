@@ -9,6 +9,17 @@ public class ProductMutableDTO {
     double price;
     ProductItem item;
 
+    public String iban;
+    public String sPerson;
+
+    public String getIBAN() {
+        return iban;
+    }
+
+    public void setIBAN(String iban) {
+        this.iban = iban;
+    }
+
     @Data
     public static class ProductItem {
         String itemName;
