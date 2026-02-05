@@ -3,6 +3,7 @@ package com.dsm.mapstruct.adapter.api.ipc;
 import com.dsm.mapstruct.core.model.SourceParameter;
 import com.dsm.mapstruct.core.usecase.ExplorePathUseCase;
 import com.dsm.mapstruct.core.usecase.ExploreTypeSourceUseCase;
+import com.dsm.mapstruct.core.util.DynamicClassLoaderUtil;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -167,8 +168,12 @@ public class IpcClientMessageListener {
                                 } else {
                                     try {
                                         log.debug("Executing type source exploration for type: {}", typeName);
-                                        // Load the class
-                                        Class<?> clazz = Class.forName(typeName);
+
+                                        // Create fresh ClassLoader for this type
+                                        ClassLoader freshClassLoader = DynamicClassLoaderUtil.createFreshClassLoader(typeName);
+
+                                        // Load the class with fresh ClassLoader
+                                        Class<?> clazz = DynamicClassLoaderUtil.loadClass(typeName, freshClassLoader);
 
                                         // Execute type source exploration
                                         ExploreTypeSourceUseCase.ExploreTypeSourceParams exploreParams =
@@ -180,9 +185,6 @@ public class IpcClientMessageListener {
                                         JsonObject resultObj = JsonParser.parseString(resultJson).getAsJsonObject();
                                         response.add("result", resultObj);
 
-                                    } catch (ClassNotFoundException e) {
-                                        log.error("Class not found: {}", typeName, e);
-                                        response.addProperty("error", "Class not found: " + typeName);
                                     } catch (Exception e) {
                                         log.error("Error exploring type source: {}", e.getMessage(), e);
                                         response.addProperty("error", "Error exploring type source: " + e.getMessage());

@@ -6,10 +6,12 @@ import com.dsm.mapstruct.core.model.FieldInfo.FieldKind;
 import com.dsm.mapstruct.core.model.PathSegment;
 import com.dsm.mapstruct.core.model.SourceParameter;
 import com.dsm.mapstruct.core.util.CollectionTypeResolverUtil;
+import com.dsm.mapstruct.core.util.DynamicClassLoaderUtil;
 import com.dsm.mapstruct.core.util.NameMatcherUtil;
 import lombok.AccessLevel;
 import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import one.util.streamex.StreamEx;
 
 import java.lang.reflect.Field;
@@ -22,6 +24,7 @@ import java.util.Set;
 /**
  * Navigates through class structures following MapStruct path expressions.
  */
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PathNavigator {
 
@@ -62,6 +65,29 @@ public class PathNavigator {
      */
     @SneakyThrows
     public CompletionResult navigateFromSources(List<SourceParameter> sources, String pathExpression, boolean isEnum) {
+        // Create fresh ClassLoader that will reload classes from disk
+        String[] classNames = sources.stream()
+                .map(SourceParameter::type)
+                .toArray(String[]::new);
+        ClassLoader freshClassLoader = DynamicClassLoaderUtil.createFreshClassLoader(classNames);
+
+        log.debug("Created fresh ClassLoader for {} source classes", classNames.length);
+
+        return navigateFromSources(sources, pathExpression, isEnum, freshClassLoader);
+    }
+
+    /**
+     * Navigates from multiple source parameters with custom ClassLoader.
+     * Internal method that allows passing a specific ClassLoader for class loading.
+     *
+     * @param sources        list of source parameters
+     * @param pathExpression the MapStruct path expression
+     * @param isEnum         true if this is for @ValueMapping (enum constants)
+     * @param classLoader    ClassLoader to use for loading classes
+     * @return completion result with parameter names or field completions
+     */
+    @SneakyThrows
+    public CompletionResult navigateFromSources(List<SourceParameter> sources, String pathExpression, boolean isEnum, ClassLoader classLoader) {
         if (sources == null || sources.isEmpty()) {
             throw new IllegalArgumentException("sources list cannot be null or empty");
         }
@@ -72,7 +98,7 @@ public class PathNavigator {
         // 2. Single-parameter source mappers (backward compatibility)
         if ((pathExpression == null || pathExpression.isBlank()) && sources.size() == 1) {
             SourceParameter singleParam = sources.get(0);
-            Class<?> paramType = Class.forName(singleParam.type());
+            Class<?> paramType = DynamicClassLoaderUtil.loadClass(singleParam.type(), classLoader);
 
             // Detect if this is a target completion (synthetic "$target" parameter name)
             boolean isTargetCompletion = "$target".equals(singleParam.name());
@@ -82,7 +108,7 @@ public class PathNavigator {
 
         // Empty path with multiple parameters -> return parameter names as completions
         if (pathExpression == null || pathExpression.isBlank()) {
-            return buildParameterCompletions(sources, "");
+            return buildParameterCompletions(sources, "", classLoader);
         }
 
         // Check if path starts with a parameter name
@@ -94,7 +120,7 @@ public class PathNavigator {
         if (matchedParam != null) {
             // Path starts with parameter name - navigate from that parameter's type
             String remainingPath = removeFirstSegment(pathExpression);
-            Class<?> paramType = Class.forName(matchedParam.type());
+            Class<?> paramType = DynamicClassLoaderUtil.loadClass(matchedParam.type(), classLoader);
             return navigate(paramType, remainingPath, isEnum);
         }
 
@@ -102,7 +128,7 @@ public class PathNavigator {
         List<SourceParameter> matchingParams = filterParametersByPrefix(sources, firstSegment);
         if (!matchingParams.isEmpty() && !firstSegment.contains(".")) {
             // Return matching parameter names
-            return buildParameterCompletions(matchingParams, firstSegment);
+            return buildParameterCompletions(matchingParams, firstSegment, classLoader);
         }
 
         // BACKWARD COMPATIBILITY: For single-parameter mappers, if path doesn't match
@@ -111,7 +137,7 @@ public class PathNavigator {
         // where user types "address." but we send sources=[{name:"param0", type:"Person"}]
         if (sources.size() == 1) {
             SourceParameter singleParam = sources.get(0);
-            Class<?> paramType = Class.forName(singleParam.type());
+            Class<?> paramType = DynamicClassLoaderUtil.loadClass(singleParam.type(), classLoader);
             return navigate(paramType, pathExpression, isEnum);
         }
 
@@ -394,7 +420,7 @@ public class PathNavigator {
     /**
      * Builds completion result containing parameter names.
      */
-    private CompletionResult buildParameterCompletions(List<SourceParameter> parameters, String pathExpression) {
+    private CompletionResult buildParameterCompletions(List<SourceParameter> parameters, String pathExpression, ClassLoader classLoader) {
         List<FieldInfo> parameterFields = new ArrayList<>();
 
         for (SourceParameter param : parameters) {
@@ -409,7 +435,7 @@ public class PathNavigator {
         if (!parameters.isEmpty()) {
             SourceParameter first = parameters.get(0);
             try {
-                Class<?> firstClass = Class.forName(first.type());
+                Class<?> firstClass = DynamicClassLoaderUtil.loadClass(first.type(), classLoader);
                 return CompletionResult.of(
                     firstClass.getName(),
                     firstClass.getSimpleName(),
@@ -417,8 +443,9 @@ public class PathNavigator {
                     pathExpression,
                     parameterFields
                 );
-            } catch (ClassNotFoundException e) {
+            } catch (Exception e) {
                 // Fallback to simple class info
+                log.warn("Failed to load class for parameter completion: {}", first.type(), e);
             }
         }
 
