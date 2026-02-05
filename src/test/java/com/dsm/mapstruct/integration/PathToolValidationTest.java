@@ -310,9 +310,9 @@ class PathToolValidationTest {
         // Get suggestions for Person
         CompletionResult result = pathNavigator.navigate(Person.class, "");
 
-        // Should have firstName (field)
+        // Should have firstName (field - prioritized over getter with same name)
         boolean hasFirstName = result.completions().stream()
-                .anyMatch(f -> f.name().equals("firstName") && f.kind() == FieldInfo.FieldKind.GETTER);
+                .anyMatch(f -> f.name().equals("firstName") && f.kind() == FieldInfo.FieldKind.FIELD);
         assertThat(hasFirstName).isTrue();
 
         // Should have fullName (getter method without field)

@@ -2,6 +2,7 @@ package com.dsm.mapstruct.core.usecase.helper;
 
 import com.dsm.mapstruct.core.model.FieldInfo;
 
+import java.beans.Introspector;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -16,8 +17,9 @@ import java.util.stream.Stream;
 public class ReflectionAnalyzer {
 
     /**
-     * Gets all accessible PUBLIC fields from a class, including inherited fields.
-     * Only public fields can be used in MapStruct mappings.
+     * Gets all accessible non-private fields from a class, including inherited fields.
+     * Returns public, protected, and package-private fields.
+     * Private fields are excluded as they cannot be accessed by MapStruct.
      */
     public List<FieldInfo> getAllFields(Class<?> clazz) {
         List<FieldInfo> fields = new ArrayList<>();
@@ -26,10 +28,15 @@ public class ReflectionAnalyzer {
         Class<?> current = clazz;
         while (current != null && current != Object.class) {
             for (Field field : current.getDeclaredFields()) {
-                // Skip synthetic, static, and non-public fields
-                if (field.isSynthetic() ||
-                    Modifier.isStatic(field.getModifiers()) ||
-                    !Modifier.isPublic(field.getModifiers())) {
+                int modifiers = field.getModifiers();
+
+                // Skip synthetic and static fields
+                if (field.isSynthetic() || Modifier.isStatic(modifiers)) {
+                    continue;
+                }
+
+                // Skip PRIVATE fields only (keep public, protected, package-private)
+                if (Modifier.isPrivate(modifiers)) {
                     continue;
                 }
 
@@ -179,22 +186,29 @@ public class ReflectionAnalyzer {
 
     /**
      * Converts a setter method name to MapStruct property name format.
+     * Uses standard JavaBeans Introspector.decapitalize() for correct handling.
+     *
      * Examples:
      * - setFullName → fullName (JavaBean style)
+     * - setURL → URL (JavaBeans keeps 2+ uppercase letters)
      * - fullName → fullName (Builder/fluent style)
      */
     private String getPropertyNameFromSetter(String methodName) {
         if (methodName.startsWith("set") && methodName.length() > 3) {
             String propertyName = methodName.substring(3);
-            return decapitalize(propertyName);
+            return Introspector.decapitalize(propertyName);
         }
         return methodName;
     }
 
     /**
      * Gets all fields and getters combined.
-     * If both a field and a getter exist for the same property name,
-     * only the getter is returned (MapStruct prefers getters).
+     *
+     * Strategy:
+     * 1. Include all non-private fields (public, protected, package-private)
+     * 2. Include all public getters
+     * 3. If a getter has EXACT same name as a field (case-sensitive), exclude the getter
+     * 4. If a getter name differs in case from field (e.g., field="URL", getter="url"), include both
      *
      * If no getters are found, also includes setters (for builder classes and target mappings).
      */
@@ -203,25 +217,26 @@ public class ReflectionAnalyzer {
         List<FieldInfo> getters = getAllGetters(clazz);
         List<FieldInfo> setters = getAllSetters(clazz);
 
-        // Create a set of getter property names
-        var getterNames = getters.stream()
+        // Create a set of field names (case-sensitive)
+        var fieldNames = fields.stream()
                 .map(FieldInfo::name)
                 .collect(java.util.stream.Collectors.toSet());
 
-        // Create a set of setter property names
-        var setterNames = setters.stream()
-                .map(FieldInfo::name)
-                .collect(java.util.stream.Collectors.toSet());
-
-        // Filter out fields that have a corresponding getter or setter
-        var uniqueFields = fields.stream()
-                .filter(field -> !getterNames.contains(field.name()) && !setterNames.contains(field.name()))
+        // Filter out getters that have EXACT same name as fields (case-sensitive)
+        // Keep getters that differ in case (e.g., field "URL" vs getter "url")
+        var uniqueGetters = getters.stream()
+                .filter(getter -> !fieldNames.contains(getter.name()))
                 .toList();
 
-        // Combine: unique fields + all getters + all setters
+        // Filter out setters that have EXACT same name as fields
+        var uniqueSetters = setters.stream()
+                .filter(setter -> !fieldNames.contains(setter.name()))
+                .toList();
+
+        // Combine: all fields + unique getters + unique setters
         return Stream.concat(
-            Stream.concat(uniqueFields.stream(), getters.stream()),
-            setters.stream()
+            Stream.concat(fields.stream(), uniqueGetters.stream()),
+            uniqueSetters.stream()
         ).toList();
     }
 
@@ -355,51 +370,23 @@ public class ReflectionAnalyzer {
 
     /**
      * Converts a getter method name to MapStruct property name format.
+     * Uses standard JavaBeans Introspector.decapitalize() for correct handling.
+     *
      * Examples:
      * - getFirstName → firstName
      * - isActive → active
-     * - getURL → url (handles acronyms)
+     * - getURL → URL (JavaBeans keeps 2+ uppercase letters)
+     * - getADDRESS → ADDRESS (JavaBeans keeps 2+ uppercase letters)
      */
     private String getPropertyNameFromGetter(String methodName) {
         if (methodName.startsWith("get") && methodName.length() > 3) {
             String propertyName = methodName.substring(3);
-            return decapitalize(propertyName);
+            return Introspector.decapitalize(propertyName);
         } else if (methodName.startsWith("is") && methodName.length() > 2) {
             String propertyName = methodName.substring(2);
-            return decapitalize(propertyName);
+            return Introspector.decapitalize(propertyName);
         }
         return methodName;
     }
 
-    /**
-     * Decapitalizes the first letter of a string, handling acronyms correctly.
-     * Examples:
-     * - FirstName → firstName
-     * - URL → url
-     * - XMLParser → xmlParser
-     */
-    private String decapitalize(String str) {
-        if (str == null || str.isEmpty()) {
-            return str;
-        }
-        // If the string has more than one character and the second character is uppercase,
-        // it's likely an acronym, so lowercase the entire prefix
-        if (str.length() > 1 && Character.isUpperCase(str.charAt(1))) {
-            // Find where the acronym ends
-            int i = 0;
-            while (i < str.length() && Character.isUpperCase(str.charAt(i))) {
-                i++;
-            }
-            // If we reached the end or it's all uppercase, lowercase everything
-            if (i == str.length()) {
-                return str.toLowerCase();
-            }
-            // Otherwise, keep the last uppercase letter with the next part
-            // e.g., "XMLParser" -> "xml" + "Parser" -> "xmlParser"
-            if (i > 1) {
-                return str.substring(0, i - 1).toLowerCase() + str.substring(i - 1);
-            }
-        }
-        return str.substring(0, 1).toLowerCase() + str.substring(1);
-    }
 }
