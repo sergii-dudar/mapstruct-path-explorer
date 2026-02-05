@@ -101,6 +101,20 @@ SequencedCollection<> implementations (like Lists) supporting `first` and `last`
 4. **Navigation**: Follows the path through the object graph
 5. **Completion**: Returns available fields/getters/setters at the final location
 6. **Filtering**: Applies prefix matching if a partial segment is provided
+7. **Dynamic Class Reloading**: Each request uses a fresh ClassLoader to detect recompiled classes
+
+### Class Reloading
+
+The server automatically detects changes to compiled classes **without requiring a restart**:
+
+- ✅ **Add/remove/modify fields** → Recompile → Changes appear immediately in completions
+- ✅ **Fresh ClassLoader per request** → No class caching issues
+- 📝 **Important**: Classes must be **compiled** for changes to be visible (`.class` files, not `.java` sources)
+- 💡 **Recommended**: Enable **incremental compilation** in your build tool for faster feedback:
+  - JDTLS: java.autobuild.enabled = true
+  - Maven: `mvn compile` (or use `mvn compile -Dmaven.compiler.useIncrementalCompilation=true`)
+  - Gradle: Incremental compilation is enabled by default
+  - IDE: Enable auto-compile (IntelliJ: "Build project automatically")
 
 ## IPC Protocol (Unix Domain Socket)
 
@@ -360,6 +374,17 @@ This provides better UX by showing fields as "writable" when configuring target 
 
 ## Troubleshooting
 
+### Changes Not Appearing in Completions
+
+**Problem**: Added/removed/modified fields in Java classes but completions don't update
+
+**Solution**:
+
+1. **Recompile your project** - Changes only appear after compilation (`.class` files must be updated)
+2. **No server restart needed** - The server automatically reloads classes from disk on each request
+3. **Enable incremental compilation** for faster feedback (see "Class Reloading" section)
+4. **Check compilation succeeded** - Verify no compilation errors in your build tool
+
 ### Class Not Found Error
 
 **Problem**: `ClassNotFoundException` when the IPC server tries to analyze a class
@@ -405,6 +430,7 @@ java -version
 - [x] @MappingTarget parameter detection via bytecode analysis
 - [x] Smart field kind conversion for target attributes (GETTER→SETTER)
 - [x] Full IPC protocol with multi-source API
-- [x] Comprehensive test coverage (150+ tests)
+- [x] Comprehensive test coverage (172+ tests)
+- [x] **Dynamic class reloading** - Detects recompiled classes without server restart
 - [ ] Testing and stabilization work
 - [ ] Create separate nvim plugin `blink-cmp-java-mapstruct` with automatic server installation/updates
