@@ -201,7 +201,7 @@ class MapStructIntegrationTest {
         assertThat(result).isNotNull();
         assertThat(result.getFirstOrderId()).isEqualTo("ORD-123");
         assertThat(result.getLastOrderId()).isEqualTo("ORD-123");
-        assertThat(result.getFirstProductName()).isEqualTo("Laptop");
+        assertThat(result.getFirstProductName()).isEqualTo("Springfield");
     }
 
     @Test
