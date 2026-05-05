@@ -1,12 +1,19 @@
 package com.dsm.mapstruct.integration.mapper;
 
-import com.dsm.mapstruct.integration.dto.*;
+import com.dsm.mapstruct.integration.dto.ComplexNestedDTO;
+import com.dsm.mapstruct.integration.dto.MixedAccessDTO;
+import com.dsm.mapstruct.integration.dto.NestedCollectionDTO;
+import com.dsm.mapstruct.integration.dto.OrderComplexDTO;
+import com.dsm.mapstruct.integration.dto.PrimitiveDTO;
+import com.dsm.mapstruct.integration.dto.ProductDTO;
+import com.dsm.mapstruct.integration.dto.SimpleFieldDTO;
 import com.dsm.mapstruct.testdata.TestClasses.AddressRecord;
 import com.dsm.mapstruct.testdata.TestClasses.OrderRecord;
 import com.dsm.mapstruct.testdata.TestClasses.PersonRecord;
 import com.dsm.mapstruct.testdata.TestClasses.ProductRecord;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;
 
 /**
@@ -41,6 +48,20 @@ public interface RecordMapper {
     @Mapping(target = "productName", source = "items.first.product.name")
     @Mapping(target = "productPrice", source = "items.first.product.price")
     OrderComplexDTO mapComplexOrderRecord(OrderRecord orderRecord);
+
+    @Mapping(target = "orderId", source = "orderId")
+    @Mapping(target = "customerName", source = "customer.firstName")
+    @Mapping(target = "customerCity", ignore = true)
+    @Mapping(target = "productName", source = "items.first.product.name")
+    @Mapping(target = "productPrice", source = "items.first.product.price")
+    void mapComplexOrderRecord2(@MappingTarget OrderComplexDTO.OrderComplexDTOBuilder target, OrderRecord orderRecord);
+
+    @Mapping(target = "orderId", source = "orderId")
+    @Mapping(target = "customerName", source = "customer.firstName")
+    @Mapping(target = "customerCity", ignore = true)
+    @Mapping(target = "productName", source = "items.first.product.name")
+    @Mapping(target = "productPrice", source = "items.first.product.price")
+    OrderComplexDTO mapComplexOrderRecord3(@MappingTarget OrderComplexDTO.OrderComplexDTOBuilder target, OrderRecord orderRecord);
 
     // Record age
     @Mapping(target = "age", source = "age")
