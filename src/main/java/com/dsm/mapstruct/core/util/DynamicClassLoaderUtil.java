@@ -9,6 +9,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -33,7 +34,8 @@ public class DynamicClassLoaderUtil {
      * @return a new URLClassLoader with all necessary classpath entries
      */
     public static ClassLoader createFreshClassLoader(String... classNames) {
-        Set<URL> urls = new HashSet<>();
+        // Use insertion-ordered set so source-class locations stay first.
+        Set<URL> urls = new LinkedHashSet<>();
 
         // Collect source locations for all classes
         for (String className : classNames) {
@@ -54,6 +56,16 @@ public class DynamicClassLoaderUtil {
             }
         }
 
+        // Also add the full runtime classpath. The source classes' own code locations
+        // (project target/ dirs) are kept first above and reloaded fresh from disk because
+        // the loader below uses a null parent (no delegation to the cached system loader).
+        // Dependency jars from the runtime classpath are immutable, so resolving them through
+        // this loader is safe and is required so that reflection on a source type can resolve
+        // transitively-referenced field/getter types that live in other modules or jars
+        // (e.g. a field typed with a class from a separate library jar). Without these entries
+        // the null-parent loader throws NoClassDefFoundError as soon as such a type is touched.
+        addRuntimeClasspathUrls(urls);
+
         if (urls.isEmpty()) {
             log.warn("No classpath URLs found, using system ClassLoader");
             return ClassLoader.getSystemClassLoader();
@@ -69,6 +81,33 @@ public class DynamicClassLoaderUtil {
 
         // Use null parent to force loading from our URLs without caching
         return new URLClassLoader(urlArray, null);
+    }
+
+    /**
+     * Adds every existing entry from the JVM's runtime classpath
+     * ({@code java.class.path}) to the given URL set.
+     *
+     * @param urls set to populate with classpath URLs
+     */
+    private static void addRuntimeClasspathUrls(Set<URL> urls) {
+        String classpath = System.getProperty("java.class.path");
+        if (classpath == null || classpath.isEmpty()) {
+            return;
+        }
+
+        for (String entry : classpath.split(File.pathSeparator)) {
+            if (entry.isEmpty()) {
+                continue;
+            }
+            try {
+                File file = new File(entry);
+                if (file.exists()) {
+                    urls.add(file.toURI().toURL());
+                }
+            } catch (Exception e) {
+                log.warn("Skipping runtime classpath entry {}: {}", entry, e.getMessage());
+            }
+        }
     }
 
     /**
