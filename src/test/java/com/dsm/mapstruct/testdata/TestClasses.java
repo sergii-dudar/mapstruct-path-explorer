@@ -1,6 +1,10 @@
 package com.dsm.mapstruct.testdata;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
 import java.util.List;
@@ -229,6 +233,9 @@ public class TestClasses {
      */
     @Builder
     public record PersonRecord(String firstName, String lastName, int age) {
+    }
+
+    public record PersonRecordNotBuilder(String firstName, String lastName, int age) {
     }
 
     /**

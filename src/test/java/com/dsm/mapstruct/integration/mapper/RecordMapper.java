@@ -10,6 +10,7 @@ import com.dsm.mapstruct.integration.dto.SimpleFieldDTO;
 import com.dsm.mapstruct.testdata.TestClasses.AddressRecord;
 import com.dsm.mapstruct.testdata.TestClasses.OrderRecord;
 import com.dsm.mapstruct.testdata.TestClasses.PersonRecord;
+import com.dsm.mapstruct.testdata.TestClasses.PersonRecordNotBuilder;
 import com.dsm.mapstruct.testdata.TestClasses.ProductRecord;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -28,6 +29,10 @@ public interface RecordMapper {
     // Simple record field
     @Mapping(target = "name", source = "firstName")
     SimpleFieldDTO mapSimpleRecordField(PersonRecord personRecord);
+
+    @Mapping(target = "firstName", source = "firstName")
+    @Mapping(target = "lastName", source = "lastName")
+    PersonRecordNotBuilder mapSimpleRecordFieldTest(PersonRecord personRecord);
 
     // Order customer name
     @Mapping(target = "name", source = "customer.firstName")
