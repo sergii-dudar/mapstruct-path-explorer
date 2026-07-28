@@ -1,8 +1,35 @@
 package com.dsm.mapstruct.integration.mapper;
 
-import com.dsm.mapstruct.integration.dto.*;
-import com.dsm.mapstruct.testdata.TestClasses.*;
-import org.mapstruct.*;
+import com.dsm.mapstruct.integration.dto.CollectionFirstDTO;
+import com.dsm.mapstruct.integration.dto.CollectionLastDTO;
+import com.dsm.mapstruct.integration.dto.CollectionNestedFieldDTO;
+import com.dsm.mapstruct.integration.dto.CompletePersonDTO;
+import com.dsm.mapstruct.integration.dto.ComplexNestedDTO;
+import com.dsm.mapstruct.integration.dto.ConcatenatedDTO;
+import com.dsm.mapstruct.integration.dto.DeeplyNestedDTO;
+import com.dsm.mapstruct.integration.dto.DepartmentDTO;
+import com.dsm.mapstruct.integration.dto.DepartmentHeadDTO;
+import com.dsm.mapstruct.integration.dto.DepartmentMemberDTO;
+import com.dsm.mapstruct.integration.dto.GetterMethodDTO;
+import com.dsm.mapstruct.integration.dto.MixedAccessDTO;
+import com.dsm.mapstruct.integration.dto.MultipleCollectionDTO;
+import com.dsm.mapstruct.integration.dto.MultiplePrimitivesDTO;
+import com.dsm.mapstruct.integration.dto.NestedCollectionDTO;
+import com.dsm.mapstruct.integration.dto.NestedFieldDTO;
+import com.dsm.mapstruct.integration.dto.OrderComplexDTO;
+import com.dsm.mapstruct.integration.dto.PrimitiveDTO;
+import com.dsm.mapstruct.integration.dto.ProductMutableDTO;
+import com.dsm.mapstruct.integration.dto.SimpleFieldDTO;
+import com.dsm.mapstruct.testdata.TestClasses.Company;
+import com.dsm.mapstruct.testdata.TestClasses.Order;
+import com.dsm.mapstruct.testdata.TestClasses.OrderState;
+import com.dsm.mapstruct.testdata.TestClasses.OrderStatus;
+import com.dsm.mapstruct.testdata.TestClasses.Person;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.ValueMapping;
 import org.mapstruct.factory.Mappers;
 
 /**
@@ -164,9 +191,9 @@ public interface TestMapper {
     @Mapping(target = "firstOrderId", source = "person.orders.first.orderId")
     @Mapping(target = "firstProductName", source = "person.orders.first.items.first.product.name")
     CompletePersonDTO mapCompletePerson(
-                                        Person person,
-                                        Order order,
-                                        String customFullName
+            Person person,
+            Order order,
+            String customFullName
     );
 
     @Mapping(target = "fullName", source = "customFullName")

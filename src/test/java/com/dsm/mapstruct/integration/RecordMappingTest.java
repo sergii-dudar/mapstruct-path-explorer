@@ -1,8 +1,19 @@
 package com.dsm.mapstruct.integration;
 
-import com.dsm.mapstruct.integration.dto.*;
+import com.dsm.mapstruct.integration.dto.ComplexNestedDTO;
+import com.dsm.mapstruct.integration.dto.MixedAccessDTO;
+import com.dsm.mapstruct.integration.dto.NestedCollectionDTO;
+import com.dsm.mapstruct.integration.dto.OrderComplexDTO;
+import com.dsm.mapstruct.integration.dto.PrimitiveDTO;
+import com.dsm.mapstruct.integration.dto.ProductDTO;
+import com.dsm.mapstruct.integration.dto.SimpleFieldDTO;
 import com.dsm.mapstruct.integration.mapper.RecordMapper;
-import com.dsm.mapstruct.testdata.TestClasses.*;
+import com.dsm.mapstruct.testdata.TestClasses.AddressRecord;
+import com.dsm.mapstruct.testdata.TestClasses.CountryRecord;
+import com.dsm.mapstruct.testdata.TestClasses.OrderItemRecord;
+import com.dsm.mapstruct.testdata.TestClasses.OrderRecord;
+import com.dsm.mapstruct.testdata.TestClasses.PersonRecord;
+import com.dsm.mapstruct.testdata.TestClasses.ProductRecord;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.junit.jupiter.api.BeforeEach;
