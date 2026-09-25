@@ -8,7 +8,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -67,7 +69,10 @@ public class ReflectionAnalyzer {
     public List<FieldInfo> getAllGetters(Class<?> clazz) {
         List<FieldInfo> getters = new ArrayList<>();
 
-        // For records, extract record component accessor methods
+        // For records, extract record component accessor methods. MapStruct maps a record accessor
+        // by its exact component name, so it must not also be parsed as a get/is-prefixed getter
+        // (a component named "issuer" would otherwise additionally yield the bogus property "suer").
+        Set<String> recordAccessorNames = new HashSet<>();
         if (clazz.isRecord()) {
             var recordComponents = clazz.getRecordComponents();
             if (recordComponents != null) {
@@ -76,12 +81,16 @@ public class ReflectionAnalyzer {
                     Class<?> componentType = component.getType();
                     String typeName = getTypeName(componentType);
                     getters.add(new FieldInfo(componentName, typeName, FieldInfo.FieldKind.GETTER));
+                    recordAccessorNames.add(componentName);
                 }
             }
         }
 
         // Regular getter methods
         for (Method method : clazz.getMethods()) {
+            if (method.getParameterCount() == 0 && recordAccessorNames.contains(method.getName())) {
+                continue; // record accessor, already added under its exact name
+            }
             if (isGetter(method)) {
                 String propertyName = getPropertyNameFromGetter(method.getName());
 
@@ -202,15 +211,17 @@ public class ReflectionAnalyzer {
     }
 
     /**
-     * Gets all fields and getters combined.
+     * Gets all fields, getters and setters combined.
      *
      * Strategy:
      * 1. Include all non-private fields (public, protected, package-private)
      * 2. Include all public getters
-     * 3. If a getter has EXACT same name as a field (case-sensitive), exclude the getter
-     * 4. If a getter name differs in case from field (e.g., field="URL", getter="url"), include both
+     * 3. Include all public setters (JavaBean and fluent/builder style)
+     * 4. If a getter or setter has the EXACT same name as a field (case-sensitive), exclude it
+     * 5. If a getter name differs in case from a field (e.g., field="URL", getter="url"), include both
      *
-     * If no getters are found, also includes setters (for builder classes and target mappings).
+     * Callers decide what to keep: source completions drop SETTER entries, target completions
+     * convert FIELD/GETTER entries to SETTER (see PathNavigator).
      */
     public List<FieldInfo> getAllFieldsAndGetters(Class<?> clazz) {
         List<FieldInfo> fields = getAllFields(clazz);
@@ -319,15 +330,27 @@ public class ReflectionAnalyzer {
     }
 
     /**
-     * Checks if a method is a getter.
+     * Checks if a method is a getter, following MapStruct's DefaultAccessorNamingStrategy:
+     * a public, non-static, no-arg, non-void method named {@code getX}, or {@code isX} only when it
+     * returns {@code boolean}/{@code Boolean} (so {@code isolationLevel()} is not a getter for
+     * property "olationLevel").
      */
     private boolean isGetter(Method method) {
+        if (!Modifier.isPublic(method.getModifiers()) ||
+            Modifier.isStatic(method.getModifiers()) ||
+            method.getParameterCount() != 0 ||
+            method.getReturnType() == void.class) {
+            return false;
+        }
         String name = method.getName();
-        return Modifier.isPublic(method.getModifiers()) &&
-               !Modifier.isStatic(method.getModifiers()) &&
-               method.getParameterCount() == 0 &&
-               method.getReturnType() != void.class &&
-               (name.startsWith("get") || name.startsWith("is"));
+        if (name.startsWith("get") && name.length() > 3) {
+            return true;
+        }
+        return name.startsWith("is") && name.length() > 2 && isBooleanType(method.getReturnType());
+    }
+
+    private boolean isBooleanType(Class<?> type) {
+        return type == boolean.class || type == Boolean.class;
     }
 
     /**

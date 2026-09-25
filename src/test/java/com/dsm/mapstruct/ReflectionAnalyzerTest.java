@@ -323,4 +323,34 @@ class ReflectionAnalyzerTest {
 
         assertThat(setters).isEmpty();
     }
+
+    // ===== Accessor naming edge cases (MapStruct DefaultAccessorNamingStrategy) =====
+
+    @Test
+    void testRecordAccessorStartingWithIsIsReportedOnceUnderItsExactName() {
+        List<FieldInfo> getters = analyzer.getAllGetters(CardRecord.class);
+
+        assertThat(getters).extracting(FieldInfo::name)
+                .containsExactlyInAnyOrder("issuer", "number", "active");
+    }
+
+    @Test
+    void testIsPrefixIsAGetterOnlyForBooleanReturnTypes() {
+        List<FieldInfo> getters = analyzer.getAllGetters(AccountPojo.class);
+
+        assertThat(getters).extracting(FieldInfo::name)
+                .contains("name", "status", "active", "verified")
+                .doesNotContain("olationLevel", "isolationLevel");
+        assertThat(analyzer.getFieldOrGetterType(AccountPojo.class, "verified")).isEqualTo(Boolean.class);
+        assertThat(analyzer.getFieldOrGetterType(AccountPojo.class, "olationLevel")).isNull();
+    }
+
+    @Test
+    void testSettersIncludeWriteOnlyMutators() {
+        List<FieldInfo> setters = analyzer.getAllSetters(AccountPojo.class);
+
+        assertThat(setters).extracting(FieldInfo::name)
+                .contains("name", "status", "active", "addTag");
+        assertThat(setters).allMatch(f -> f.kind() == FieldInfo.FieldKind.SETTER);
+    }
 }

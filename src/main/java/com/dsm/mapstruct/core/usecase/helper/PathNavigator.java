@@ -34,7 +34,10 @@ public class PathNavigator {
             Boolean.class,
             Character.class,
             Date.class,
-            Temporal.class
+            Temporal.class,
+            // An enum is a leaf value for @Mapping; its constants are only offered via @ValueMapping
+            // (isEnum), which is checked before the terminal test in navigate().
+            Enum.class
     );
 
     PathParser pathParser = new PathParser();
@@ -73,7 +76,13 @@ public class PathNavigator {
 
         log.debug("Created fresh ClassLoader for {} source classes", classNames.length);
 
-        return navigateFromSources(sources, pathExpression, isEnum, freshClassLoader);
+        try {
+            return navigateFromSources(sources, pathExpression, isEnum, freshClassLoader);
+        } finally {
+            // The result holds only names; release the loader (and the jar handles it opened) now
+            // instead of waiting for GC.
+            DynamicClassLoaderUtil.closeQuietly(freshClassLoader);
+        }
     }
 
     /**
@@ -200,8 +209,9 @@ public class PathNavigator {
                 }
                 // Return all fields and getters from root class
                 List<FieldInfo> allFields = reflectionAnalyzer.getAllFieldsAndGetters(rootClass);
-                // For target completions, convert field kinds to SETTER
-                List<FieldInfo> resultFields = isTargetCompletion ? convertToSetterKind(allFields) : allFields;
+                // Same kind filtering as for nested paths: targets get SETTER kinds, sources never
+                // see setters (addX/withX/... are not readable properties).
+                List<FieldInfo> resultFields = isTargetCompletion ? convertToSetterKind(allFields) : filterOutSetters(allFields);
                 return CompletionResult.of(rootClass.getName(),
                         rootClass.getSimpleName(),
                         rootClass.getPackageName(),
@@ -217,11 +227,10 @@ public class PathNavigator {
                 Class<?> nextType = resolveNextType(currentType, segment, lastField);
 
                 if (nextType == null) {
-                    // Cannot navigate further
-                    return CompletionResult.empty(rootClass.getName(),
-                            rootClass.getSimpleName(),
-                            rootClass.getPackageName(),
-                            pathExpression);
+                    // Cannot navigate further: the path names no type, so report none (callers such
+                    // as resolve_path_type treat a non-empty className as a successfully resolved type).
+                    log.debug("Cannot resolve segment '{}' of path '{}' on {}", segment.name(), pathExpression, currentType.getName());
+                    return unresolved(pathExpression);
                 }
 
                 // Update lastField if this was a field access
@@ -242,10 +251,8 @@ public class PathNavigator {
                 if (!prefix.isEmpty()) {
                     Class<?> nextType = resolveNextType(currentType, lastSegment, lastField);
                     if (nextType == null) {
-                        return CompletionResult.empty(rootClass.getName(),
-                                rootClass.getSimpleName(),
-                                rootClass.getPackageName(),
-                                pathExpression);
+                        log.debug("Cannot resolve method segment '{}' of path '{}' on {}", prefix, pathExpression, currentType.getName());
+                        return unresolved(pathExpression);
                     }
                     currentType = nextType;
                 }
@@ -283,12 +290,18 @@ public class PathNavigator {
                     resultFields);
 
         } catch (Exception e) {
-            // Return empty result on error
-            return CompletionResult.empty(rootClass.getName(),
-                    rootClass.getSimpleName(),
-                    rootClass.getPackageName(),
-                    pathExpression);
+            // Reflection failed part-way (e.g. a SecurityException or an unexpected shape): there is no
+            // trustworthy type to report. Log it - a silent empty list hides classpath problems.
+            log.warn("Navigation of path '{}' from {} failed: {}", pathExpression, rootClass.getName(), e.toString());
+            return unresolved(pathExpression);
         }
+    }
+
+    /**
+     * Result for a path that does not resolve to any type: no completions and no class information.
+     */
+    private static CompletionResult unresolved(String pathExpression) {
+        return CompletionResult.empty("", "", "", pathExpression);
     }
 
     /**

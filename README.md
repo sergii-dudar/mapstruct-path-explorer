@@ -18,7 +18,7 @@ This project is under early development state, and I don't know when it will be 
 - Support for arrays and generic types
 - Full support for Java records (accessor methods like `name()`, `age()`)
 - **Setter detection** for JavaBean-style setters and builder patterns
-- **@MappingTarget parameter detection** for void return type mappers
+- **@MappingTarget-aware completion**: the editor client passes the `@MappingTarget` parameter's type as the target and leaves it out of the sources
 - **Multi-parameter mapper support** with parameter name completion
 - **Smart field kind detection** - GETTER for source, SETTER for target
 - Prefix matching for autocomplete suggestions
@@ -123,8 +123,10 @@ For persistent sessions (like Neovim integration), the tool supports IPC communi
 ### Starting the IPC Server
 
 ```bash
-java -jar mapstruct-path-explorer.jar /tmp/mapstruct-ipc.sock
+java -cp mapstruct-path-explorer.jar com.dsm.mapstruct.IpcServer /tmp/mapstruct-ipc.sock
 ```
+
+The jar's manifest main class is the one-shot CLI (`MapStructPathTool`), so `java -jar` does not start the server; the IPC entry point must be named explicitly. Prepend the project's compiled classpath (`mapstruct-path-explorer.jar:path/to/classes:...`) so user types can be loaded.
 
 ### Protocol Format
 
@@ -188,6 +190,8 @@ The protocol uses JSON messages with the following structure:
   "error": "Error message"
 }
 ```
+
+Every request line gets exactly one response line and the connection stays open: malformed JSON (`Invalid request: ...`), a bad `sources` entry (`Invalid 'sources' param: ...`) and any failure inside the server (`Error exploring path: ...`, including `NoClassDefFoundError` when a class references a type missing from the classpath) are all reported as errors. The server exits only when the client disconnects, asks for `shutdown`, or stays silent for 30 seconds while no request is running.
 
 ### Multi-Parameter Mapper Support
 
@@ -259,11 +263,12 @@ For methods with `@MappingTarget` and `void` return type:
 void mapPerson(@MappingTarget PersonDTO dto, Person person);
 ```
 
-The tool automatically:
+The `@MappingTarget` parameter is recognised by the editor client (the Neovim module reads the method signature with treesitter; the server has no annotation handling of its own). The client then:
 
-1. Detects the `@MappingTarget` parameter from bytecode
-2. Uses the `@MappingTarget` parameter type as the target class
-3. Excludes `@MappingTarget` parameters from source completions
+1. Sends the `@MappingTarget` parameter's type as the `$target` source for target completion
+2. Leaves that parameter out of the `sources` array for source completion
+
+Any other editor integration must do the same before calling the server.
 
 ### Setter Detection
 
@@ -370,7 +375,7 @@ This provides better UX by showing fields as "writable" when configuring target 
 - Does not support complex generic type scenarios (e.g., nested generics)
 - Only returns public members (fields, getters, setters) as MapStruct can only access public members
 - Returns empty completions for terminal types (primitives, wrapper types like Integer, and String) as they have no useful MapStruct properties to navigate to
-- @MappingTarget detection requires parameter annotations to be available in compiled bytecode (compile with `-parameters` flag or use debug info)
+- @MappingTarget handling lives in the editor client; the server only sees the `sources` list it is given
 
 ## Troubleshooting
 
@@ -427,10 +432,10 @@ java -version
 - [x] Implement lightweight IPC by using Unix Domain Socket for communication by long running applications like NeoVim
 - [x] Multi-parameter mapper support with parameter name completion
 - [x] Setter detection (JavaBean-style, builder patterns, fluent setters)
-- [x] @MappingTarget parameter detection via bytecode analysis
+- [x] @MappingTarget-aware completion (parameter detected by the editor client)
 - [x] Smart field kind conversion for target attributes (GETTER→SETTER)
 - [x] Full IPC protocol with multi-source API
-- [x] Comprehensive test coverage (172+ tests)
+- [x] Comprehensive test coverage (200+ tests)
 - [x] **Dynamic class reloading** - Detects recompiled classes without server restart
 - [ ] Testing and stabilization work
 - [ ] Create separate nvim plugin `blink-cmp-java-mapstruct` with automatic server installation/updates

@@ -10,6 +10,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -45,34 +46,41 @@ public class IpcServerRunner {
         }
 
         log.info("Socket path: {}", socketPath);
+        Path path = Path.of(socketPath);
+
+        ServerSocketChannel server;
+        try {
+            // Delete existing socket file if it exists
+            if (Files.deleteIfExists(path)) {
+                log.info("Deleted existing socket file: {}", path);
+            }
+            server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+            server.bind(UnixDomainSocketAddress.of(path));
+        } catch (IOException | UnsupportedOperationException | IllegalArgumentException e) {
+            // Not a client problem: an unusable path (too long for AF_UNIX, unwritable dir, ...) or a
+            // platform without Unix domain sockets. Report it and exit non-zero so the editor notices.
+            log.error("Cannot bind Unix domain socket {}: {}", socketPath, e.getMessage(), e);
+            printError("Cannot bind Unix domain socket " + socketPath + ": " + e.getMessage());
+            return 1;
+        }
+
+        log.info("Server socket bound successfully to {}", socketPath);
+        Object socketFileKey = fileKey(path);
+
+        // Add shutdown hook to stop the executor and remove our socket file
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("JVM shutdown hook triggered");
+            System.out.println("Shutting down client executor...");
+            // Just initiate shutdown, don't wait - let JVM handle it
+            clientExecutor.shutdownNow();
+            log.info("Executor shutdown initiated");
+            deleteOwnSocketFile(path, socketFileKey);
+        }, "MapStruct-Shutdown"));
+
+        System.out.println("IPC server started on " + socketPath);
+        log.info("IPC server ready - waiting for client connections");
 
         try {
-            Path path = Path.of(socketPath);
-
-            // Delete existing socket file if it exists
-            if (Files.exists(path)) {
-                log.info("Deleting existing socket file: {}", path);
-                Files.deleteIfExists(path);
-            }
-
-            UnixDomainSocketAddress address = UnixDomainSocketAddress.of(path);
-            ServerSocketChannel server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
-            server.bind(address);
-
-            log.info("Server socket bound successfully to {}", socketPath);
-
-            // Add shutdown hook to gracefully stop executor
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                log.info("JVM shutdown hook triggered");
-                System.out.println("Shutting down client executor...");
-                // Just initiate shutdown, don't wait - let JVM handle it
-                clientExecutor.shutdownNow();
-                log.info("Executor shutdown initiated");
-            }));
-
-            System.out.println("IPC server started on " + socketPath);
-            log.info("IPC server ready - waiting for client connections");
-
             while (true) {
                 log.debug("Waiting for client connection...");
                 SocketChannel client = server.accept();
@@ -83,10 +91,12 @@ public class IpcServerRunner {
                     try {
                         log.debug("Starting client handler thread");
                         IpcClientMessageListener.handleClient(client);
-                    } catch (Exception e) {
-                        log.error("Error handling client", e);
-                        System.err.println("Error handling client: " + e.getMessage());
-                        e.printStackTrace(System.err);
+                    } catch (Throwable t) {
+                        // handleClient answers every request itself; anything reaching here is a bug.
+                        // Catch Throwable: with catch(Exception) an Error would vanish into the Future.
+                        log.error("Error handling client", t);
+                        System.err.println("Error handling client: " + t);
+                        t.printStackTrace(System.err);
                     }
                 });
             }
@@ -118,6 +128,41 @@ public class IpcServerRunner {
 
         log.info("Server shutting down normally");
         return 0;
+    }
+
+    /**
+     * Identity (device + inode) of the socket file we bound, or null if it cannot be read.
+     */
+    private static Object fileKey(Path path) {
+        try {
+            return Files.readAttributes(path, BasicFileAttributes.class).fileKey();
+        } catch (IOException e) {
+            log.warn("Cannot read socket file attributes for {}: {}", path, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Deletes the socket file on exit, but only while it is still the one this process bound.
+     * The editor reuses the same path for a replacement server, so a superseded process that is
+     * exiting late must not unlink the file its successor is listening on.
+     */
+    static void deleteOwnSocketFile(Path path, Object ownFileKey) {
+        try {
+            if (!Files.exists(path)) {
+                return;
+            }
+            Object currentFileKey = Files.readAttributes(path, BasicFileAttributes.class).fileKey();
+            if (ownFileKey == null || !ownFileKey.equals(currentFileKey)) {
+                log.info("Socket file {} now belongs to another server - leaving it in place", path);
+                return;
+            }
+            if (Files.deleteIfExists(path)) {
+                log.info("Deleted socket file {}", path);
+            }
+        } catch (IOException e) {
+            log.warn("Could not delete socket file {}: {}", path, e.getMessage());
+        }
     }
 
     /**

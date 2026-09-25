@@ -3,7 +3,9 @@ package com.dsm.mapstruct.core.util;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
@@ -40,8 +42,9 @@ public class DynamicClassLoaderUtil {
         // Collect source locations for all classes
         for (String className : classNames) {
             try {
-                // First load with system ClassLoader to find location
-                Class<?> clazz = Class.forName(className);
+                // Locate the class through the system ClassLoader WITHOUT initializing it: this
+                // server must never run static initializers of the user's classes.
+                Class<?> clazz = Class.forName(className, false, ClassLoader.getSystemClassLoader());
                 String location = getClassLocation(clazz);
 
                 if (location != null) {
@@ -141,8 +144,28 @@ public class DynamicClassLoaderUtil {
         try {
             return classLoader.loadClass(className);
         } catch (ClassNotFoundException e) {
-            log.error("Class not found with custom ClassLoader: {}", className, e);
+            log.error("Class not found with custom ClassLoader: {}", className);
             throw new RuntimeException("Class not found: " + className, e);
+        }
+    }
+
+    /**
+     * Closes a ClassLoader created by this utility once its classes are no longer needed, releasing
+     * the jar handles a URLClassLoader keeps open. The system ClassLoader (returned as a fallback)
+     * is left alone.
+     *
+     * @param classLoader the loader to close; may be any loader, only closeable ones are closed
+     */
+    public static void closeQuietly(ClassLoader classLoader) {
+        if (classLoader == null || classLoader == ClassLoader.getSystemClassLoader()) {
+            return;
+        }
+        if (classLoader instanceof Closeable closeable) {
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                log.debug("Could not close ClassLoader: {}", e.getMessage());
+            }
         }
     }
 

@@ -374,4 +374,68 @@ public class TestClasses {
             return priority;
         }
     }
+
+    /**
+     * Record whose component name starts with "is" (mirrors a real-world {@code issuer} field).
+     * Its accessor {@code issuer()} must be reported once, as "issuer", never as "suer".
+     */
+    public record CardRecord(String issuer, String number, boolean active) {
+    }
+
+    public enum AccountStatus {
+        OPEN,
+        CLOSED
+    }
+
+    /**
+     * POJO mixing JavaBean accessors with methods that merely share the get/set/is prefixes.
+     */
+    public static class AccountPojo {
+        private String name;
+        private AccountStatus status = AccountStatus.OPEN;
+        private boolean active;
+        private Boolean verified;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public AccountStatus getStatus() {
+            return status;
+        }
+
+        public void setStatus(AccountStatus status) {
+            this.status = status;
+        }
+
+        public boolean isActive() {
+            return active;
+        }
+
+        public void setActive(boolean active) {
+            this.active = active;
+        }
+
+        /** Boxed boolean "is" getter: a valid property "verified". */
+        public Boolean isVerified() {
+            return verified;
+        }
+
+        /** Not a getter: starts with "is" but returns String. */
+        public String isolationLevel() {
+            return "READ_COMMITTED";
+        }
+
+        /** Not a JavaBean setter in spirit, but MapStruct's set-prefix rule treats it as one. */
+        public void settle(String reference) {
+        }
+
+        /** Write-only mutator with no getter counterpart. */
+        public void addTag(String tag) {
+        }
+    }
 }

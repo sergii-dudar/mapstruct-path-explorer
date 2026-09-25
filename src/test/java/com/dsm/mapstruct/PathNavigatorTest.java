@@ -5,6 +5,8 @@ import lombok.experimental.FieldDefaults;
 import com.dsm.mapstruct.core.usecase.helper.PathNavigator;
 import com.dsm.mapstruct.core.model.CompletionResult;
 import com.dsm.mapstruct.core.model.FieldInfo;
+import com.dsm.mapstruct.testdata.TestClasses.AccountPojo;
+import com.dsm.mapstruct.testdata.TestClasses.AccountStatus;
 import com.dsm.mapstruct.testdata.TestClasses.Company;
 import com.dsm.mapstruct.testdata.TestClasses.Order;
 import com.dsm.mapstruct.testdata.TestClasses.Person;
@@ -756,5 +758,56 @@ class PathNavigatorTest {
             // Skip test if builder class not available (generated at compile time)
             org.junit.jupiter.api.Assumptions.assumeTrue(false, "Builder class not available");
         }
+    }
+
+    // ===== Kind filtering, enum leaves and unresolved paths =====
+
+    @Test
+    void testRootLevelSourceCompletionsExcludeSetters() {
+        List<SourceParameter> sources = List.of(new SourceParameter("account", AccountPojo.class.getName()));
+
+        CompletionResult result = navigator.navigateFromSources(sources, "", false);
+
+        assertThat(result.completions()).extracting(FieldInfo::kind).doesNotContain(FieldKind.SETTER);
+        assertThat(result.completions()).extracting(FieldInfo::name)
+                .contains("name", "status", "active", "verified")
+                .doesNotContain("addTag", "tle", "olationLevel");
+    }
+
+    @Test
+    void testRootLevelTargetCompletionsKeepSetters() {
+        List<SourceParameter> sources = List.of(new SourceParameter("$target", AccountPojo.class.getName()));
+
+        CompletionResult result = navigator.navigateFromSources(sources, "", false);
+
+        assertThat(result.completions()).extracting(FieldInfo::kind).containsOnly(FieldKind.SETTER);
+        assertThat(result.completions()).extracting(FieldInfo::name).contains("name", "status", "addTag");
+    }
+
+    @Test
+    void testEnumSourceLeafIsTerminal() {
+        CompletionResult result = navigator.navigate(AccountPojo.class, "status.", false);
+
+        assertThat(result.completions()).isEmpty();
+        assertThat(result.className()).isEqualTo(AccountStatus.class.getName());
+    }
+
+    @Test
+    void testEnumConstantsStillOfferedForValueMapping() {
+        CompletionResult result = navigator.navigate(AccountStatus.class, "", true);
+
+        assertThat(result.completions()).extracting(FieldInfo::name).containsExactly("CLOSED", "OPEN");
+    }
+
+    @Test
+    void testUnresolvedPathReportsNoType() {
+        CompletionResult direct = navigator.navigate(Person.class, "nonExistentField.", false);
+        CompletionResult viaSources = navigator.navigateFromSources(
+                List.of(new SourceParameter("person", Person.class.getName())), "person.nonExistentField.", false);
+
+        assertThat(direct.completions()).isEmpty();
+        assertThat(direct.className()).isEmpty();
+        assertThat(viaSources.completions()).isEmpty();
+        assertThat(viaSources.className()).isEmpty();
     }
 }

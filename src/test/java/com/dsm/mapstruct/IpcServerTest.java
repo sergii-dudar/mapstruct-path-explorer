@@ -420,4 +420,39 @@ class IpcServerTest {
         }
         assertThat(hasBuild).as("Should not include build() method").isFalse();
     }
+
+    @Test
+    @Order(11)
+    void testMalformedSourcesEntryReturnsErrorAndKeepsConnection() throws IOException {
+        JsonObject params = new JsonObject();
+        JsonObject source = new JsonObject();
+        source.addProperty("type", "com.dsm.mapstruct.testdata.TestClasses$Person"); // no "name"
+        params.add("sources", gson.toJsonTree(new JsonObject[]{source}));
+        params.addProperty("pathExpression", "");
+        params.addProperty("isEnum", false);
+
+        JsonObject response = sendRequest("explore_path", params);
+
+        assertThat(response.has("error")).isTrue();
+        assertThat(response.get("error").getAsString()).startsWith("Invalid 'sources' param");
+
+        // A bad request must not cost the connection.
+        JsonObject pong = sendRequest("ping", null);
+        assertThat(pong.get("result").getAsJsonObject().get("message").getAsString()).isEqualTo("pong");
+    }
+
+    @Test
+    @Order(12)
+    void testInvalidJsonReturnsErrorAndKeepsConnection() throws IOException {
+        out.write("this is not json\n");
+        out.flush();
+        String responseLine = in.readLine();
+        assertThat(responseLine).isNotNull();
+
+        JsonObject response = JsonParser.parseString(responseLine).getAsJsonObject();
+        assertThat(response.get("error").getAsString()).startsWith("Invalid request");
+
+        JsonObject pong = sendRequest("ping", null);
+        assertThat(pong.get("result").getAsJsonObject().get("message").getAsString()).isEqualTo("pong");
+    }
 }
