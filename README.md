@@ -191,7 +191,7 @@ The protocol uses JSON messages with the following structure:
 }
 ```
 
-Every request line gets exactly one response line and the connection stays open: malformed JSON (`Invalid request: ...`), a bad `sources` entry (`Invalid 'sources' param: ...`) and any failure inside the server (`Error exploring path: ...`, including `NoClassDefFoundError` when a class references a type missing from the classpath) are all reported as errors. The server exits only when the client disconnects, asks for `shutdown`, or stays silent for 30 seconds while no request is running.
+Every request line gets exactly one response line and the connection stays open: malformed JSON (`Invalid request: ...`), a bad `sources` entry (`Invalid 'sources' param: ...`) and any failure inside the server (`Error exploring path: ...`, including `NoClassDefFoundError` when a class references a type missing from the classpath) are all reported as errors. The server exits only when the client disconnects, asks for `shutdown`, or stays silent for 30 seconds while no request is running. A server that no client connects to exits by itself after 60 seconds (`-Dmapstruct.ipc.acceptTimeoutMs=<ms>` overrides this).
 
 ### Multi-Parameter Mapper Support
 

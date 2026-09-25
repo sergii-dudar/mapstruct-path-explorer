@@ -14,9 +14,18 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 public class IpcServerRunner {
+
+    /**
+     * System property (milliseconds) bounding how long the server waits for its first client. An
+     * editor that gave up connecting, or a stray manual start, must not leave a JVM running forever:
+     * the idle monitor only exists once a client is connected.
+     */
+    public static final String ACCEPT_TIMEOUT_PROPERTY = "mapstruct.ipc.acceptTimeoutMs";
+    private static final long DEFAULT_ACCEPT_TIMEOUT_MS = 60_000;
 
     // Single-threaded executor for handling client connection (one server per client)
     private static final ExecutorService clientExecutor = Executors.newSingleThreadExecutor(r -> {
@@ -80,10 +89,14 @@ public class IpcServerRunner {
         System.out.println("IPC server started on " + socketPath);
         log.info("IPC server ready - waiting for client connections");
 
+        AtomicBoolean clientConnected = new AtomicBoolean(false);
+        startNoClientWatchdog(clientConnected, acceptTimeoutMs());
+
         try {
             while (true) {
                 log.debug("Waiting for client connection...");
                 SocketChannel client = server.accept();
+                clientConnected.set(true);
                 log.info("Client connected from socket");
 
                 // Submit client handling to thread pool
@@ -128,6 +141,39 @@ public class IpcServerRunner {
 
         log.info("Server shutting down normally");
         return 0;
+    }
+
+    private static long acceptTimeoutMs() {
+        String value = System.getProperty(ACCEPT_TIMEOUT_PROPERTY);
+        if (value == null || value.isBlank()) {
+            return DEFAULT_ACCEPT_TIMEOUT_MS;
+        }
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            log.warn("Ignoring invalid {}={}", ACCEPT_TIMEOUT_PROPERTY, value);
+            return DEFAULT_ACCEPT_TIMEOUT_MS;
+        }
+    }
+
+    /**
+     * Exits the JVM if no client has connected {@code timeoutMs} after the socket was bound.
+     */
+    private static void startNoClientWatchdog(AtomicBoolean clientConnected, long timeoutMs) {
+        Thread watchdog = new Thread(() -> {
+            try {
+                Thread.sleep(timeoutMs);
+            } catch (InterruptedException e) {
+                return;
+            }
+            if (!clientConnected.get()) {
+                log.warn("No client connected within {} ms - exiting", timeoutMs);
+                System.out.println("No client connected within " + timeoutMs + " ms, exiting.");
+                System.exit(0);
+            }
+        }, "MapStruct-Accept-Watchdog");
+        watchdog.setDaemon(true);
+        watchdog.start();
     }
 
     /**
